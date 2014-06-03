@@ -783,6 +783,7 @@ error_code ELFObjectFile<ELFT>::getRelocationValueString(
   }
   case ELF::EM_ARM:
   case ELF::EM_HEXAGON:
+  case ELF::EM_QPU:	// llvm-objdump -t -r
     res = *SymName;
     break;
   default:
@@ -920,6 +921,8 @@ StringRef ELFObjectFile<ELFT>::getFileFormatName() const {
       return "ELF32-hexagon";
     case ELF::EM_MIPS:
       return "ELF32-mips";
+    case ELF::EM_QPU:	// llvm-objdump -t -r
+      return "ELF32-QPU";
     case ELF::EM_PPC:
       return "ELF32-ppc";
     default:
@@ -962,6 +965,9 @@ unsigned ELFObjectFile<ELFT>::getArch() const {
   case ELF::EM_MIPS:
     return (ELFT::TargetEndianness == support::little) ? Triple::mipsel
                                                        : Triple::mips;
+  case ELF::EM_QPU:	// llvm-objdump -t -r
+    return (ELFT::TargetEndianness == support::little) ?
+           Triple::qpuel : Triple::qpu;
   case ELF::EM_PPC64:
     return (ELFT::TargetEndianness == support::little) ? Triple::ppc64le
                                                        : Triple::ppc64;

@@ -26,6 +26,8 @@ const char *Triple::getArchTypeName(ArchType Kind) {
   case mipsel:  return "mipsel";
   case mips64:  return "mips64";
   case mips64el:return "mips64el";
+  case qpu:    return "qpu";
+  case qpuel:  return "qpuel";
   case msp430:  return "msp430";
   case ppc64:   return "powerpc64";
   case ppc64le: return "powerpc64le";
@@ -68,6 +70,9 @@ const char *Triple::getArchTypePrefix(ArchType Kind) {
   case mipsel:
   case mips64:
   case mips64el:return "mips";
+
+  case qpu:
+  case qpuel:return "qpu";
 
   case hexagon: return "hexagon";
 
@@ -166,6 +171,8 @@ Triple::ArchType Triple::getArchTypeForLLVMName(StringRef Name) {
     .Case("mipsel", mipsel)
     .Case("mips64", mips64)
     .Case("mips64el", mips64el)
+    .Case("qpu", qpu)
+    .Case("qpuel", qpuel)
     .Case("msp430", msp430)
     .Case("ppc64", ppc64)
     .Case("ppc32", ppc)
@@ -237,6 +244,8 @@ static Triple::ArchType parseArch(StringRef ArchName) {
     .Cases("mipsel", "mipsallegrexel", Triple::mipsel)
     .Cases("mips64", "mips64eb", Triple::mips64)
     .Case("mips64el", Triple::mips64el)
+    .Cases("qpu", "qpueb", "qpuallegrex", Triple::qpu)
+    .Cases("qpuel", "qpuallegrexel", Triple::qpuel)
     .Case("r600", Triple::r600)
     .Case("hexagon", Triple::hexagon)
     .Case("s390x", Triple::systemz)
@@ -679,6 +688,8 @@ static unsigned getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
   case llvm::Triple::le32:
   case llvm::Triple::mips:
   case llvm::Triple::mipsel:
+  case llvm::Triple::qpu:
+  case llvm::Triple::qpuel:
   case llvm::Triple::nvptx:
   case llvm::Triple::ppc:
   case llvm::Triple::r600:
@@ -735,6 +746,8 @@ Triple Triple::get32BitArchVariant() const {
   case Triple::le32:
   case Triple::mips:
   case Triple::mipsel:
+  case Triple::qpu:
+  case Triple::qpuel:
   case Triple::nvptx:
   case Triple::ppc:
   case Triple::r600:

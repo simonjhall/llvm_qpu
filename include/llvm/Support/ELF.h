@@ -287,7 +287,8 @@ enum {
   EM_RL78          = 197, // Renesas RL78 family
   EM_VIDEOCORE5    = 198, // Broadcom VideoCore V processor
   EM_78KOR         = 199, // Renesas 78KOR family
-  EM_56800EX       = 200  // Freescale 56800EX Digital Signal Controller (DSC)
+  EM_56800EX       = 200, // Freescale 56800EX Digital Signal Controller (DSC)
+  EM_QPU          = 201  // Document LLVM Backend Tutorial Qpu
 };
 
 // Object file classes.
@@ -900,6 +901,45 @@ enum {
 // Special values for the st_other field in the symbol table entry for MIPS.
 enum {
   STO_MIPS_MICROMIPS       = 0x80 // MIPS Specific ISA for MicroMips
+};
+
+// Qpu Specific e_flags
+enum {
+  EF_QPU_NOREORDER = 0x00000001, // Don't reorder instructions
+  EF_QPU_PIC       = 0x00000002, // Position independent code
+  EF_QPU_CPIC      = 0x00000004, // Call object with Position independent code
+  EF_QPU_ARCH_1    = 0x00000000, // QPU1 instruction set
+  EF_QPU_ARCH_2    = 0x10000000, // QPU2 instruction set
+  EF_QPU_ARCH_3    = 0x20000000, // QPU3 instruction set
+  EF_QPU_ARCH_4    = 0x30000000, // QPU4 instruction set
+  EF_QPU_ARCH_5    = 0x40000000, // QPU5 instruction set
+  EF_QPU_ARCH_32   = 0x50000000, // QPU32 instruction set per linux not elf.h
+  EF_QPU_ARCH_64   = 0x60000000, // QPU64 instruction set per linux not elf.h
+  EF_QPU_ARCH_32R2 = 0x70000000, // qpu32r2
+  EF_QPU_ARCH_64R2 = 0x80000000, // qpu64r2
+  EF_QPU_ARCH      = 0xf0000000  // Mask for applying EF_QPU_ARCH_ variant
+};
+
+// ELF Relocation types for Qpu
+// .
+enum {
+  R_QPU_NONE              =  0,
+  R_QPU_24                =  1,
+  R_QPU_32                =  2,
+  R_QPU_HI16              =  5,
+  R_QPU_LO16              =  6,
+  R_QPU_GPREL16           =  7,
+  R_QPU_LITERAL           =  8,
+  R_QPU_GOT16             =  9,
+  R_QPU_PC16              = 10,
+  R_QPU_PC24              = 11,
+  R_QPU_CALL16            = 12,
+  R_QPU_GOT_HI16          = 22,
+  R_QPU_GOT_LO16          = 23,
+  R_QPU_RELGOT            = 36,
+  R_QPU_TLS_TPREL32       = 47,
+  R_QPU_GLOB_DAT          = 51,
+  R_QPU_JUMP_SLOT         = 127
 };
 
 // Hexagon Specific e_flags

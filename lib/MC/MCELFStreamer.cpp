@@ -378,6 +378,10 @@ void MCELFStreamer::fixSymbolsInTLSFixups(const MCExpr *expr) {
     case MCSymbolRefExpr::VK_Mips_GOTTPREL:
     case MCSymbolRefExpr::VK_Mips_TPREL_HI:
     case MCSymbolRefExpr::VK_Mips_TPREL_LO:
+    case MCSymbolRefExpr::VK_Qpu_TLSGD:
+    case MCSymbolRefExpr::VK_Qpu_GOTTPREL:
+    case MCSymbolRefExpr::VK_Qpu_TPREL_HI:
+    case MCSymbolRefExpr::VK_Qpu_TPREL_LO:
     case MCSymbolRefExpr::VK_PPC_DTPMOD:
     case MCSymbolRefExpr::VK_PPC_TPREL:
     case MCSymbolRefExpr::VK_PPC_TPREL_LO:

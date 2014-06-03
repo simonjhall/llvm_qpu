@@ -248,6 +248,31 @@ public:
     VK_Mips_CALL_HI16,
     VK_Mips_CALL_LO16,
 
+    VK_Qpu_GPREL,
+    VK_Qpu_GOT_CALL,
+    VK_Qpu_GOT16,
+    VK_Qpu_GOT,
+    VK_Qpu_ABS_HI,
+    VK_Qpu_ABS_LO,
+    VK_Qpu_TLSGD,
+    VK_Qpu_TLSLDM,
+    VK_Qpu_DTPREL_HI,
+    VK_Qpu_DTPREL_LO,
+    VK_Qpu_GOTTPREL,
+    VK_Qpu_TPREL_HI,
+    VK_Qpu_TPREL_LO,
+    VK_Qpu_GPOFF_HI,
+    VK_Qpu_GPOFF_LO,
+    VK_Qpu_GOT_DISP,
+    VK_Qpu_GOT_PAGE,
+    VK_Qpu_GOT_OFST,
+    VK_Qpu_HIGHER,
+    VK_Qpu_HIGHEST,
+    VK_Qpu_GOT_HI16,
+    VK_Qpu_GOT_LO16,
+    VK_Qpu_CALL_HI16,
+    VK_Qpu_CALL_LO16,
+
     VK_COFF_IMGREL32 // symbol@imgrel (image-relative)
   };
 

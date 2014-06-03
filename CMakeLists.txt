@@ -104,6 +104,7 @@ set(LLVM_ALL_TARGETS
   CppBackend
   Hexagon
   Mips
+  Qpu
   MSP430
   NVPTX
   PowerPC
