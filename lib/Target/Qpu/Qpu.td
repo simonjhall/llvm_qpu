@@ -17,8 +17,6 @@ include "QpuCallingConv.td"
 
 def QpuInstrInfo : InstrInfo;
 
-// Without this will have error: 'qpu32I' is not a recognized processor for 
-//  this target (ignoring processor)
 //===----------------------------------------------------------------------===//
 // Qpu Subtarget features                                                    //
 //===----------------------------------------------------------------------===//

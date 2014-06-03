@@ -522,6 +522,7 @@ def LUi_cc  : LoadUpperCC<0x0f, "ilcc", GPRAccRARB, CPURegs, Operand<i32>>;
 
 /// Arithmetic Instructions (3-Operand, R-Type)
 def CMP     : CmpInstr<0x10, IIAlu, GPRAccRA, GPRAccRB, SR, 0>;
+def FADD     : ArithLogicR<0x13, "fadd", fadd, IIAlu, GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP, 1>;
 def ADDu     : ArithLogicR<0x13, "add", add, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 //def ADDe     : ArithLogicR<0x13, "adde", adde, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 def SUBu     : ArithLogicR<0x14, "sub", sub, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB>;
