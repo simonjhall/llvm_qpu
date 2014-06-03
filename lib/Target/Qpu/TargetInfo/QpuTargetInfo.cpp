@@ -12,12 +12,9 @@
 #include "llvm/Support/TargetRegistry.h"
 using namespace llvm;
 
-Target llvm::TheQpuTarget, llvm::TheQpuelTarget;
+Target llvm::TheQpuTarget;
 
 extern "C" void LLVMInitializeQpuTargetInfo() {
   RegisterTarget<Triple::qpu,
         /*HasJIT=*/true> X(TheQpuTarget, "qpu", "Qpu");
-
-  RegisterTarget<Triple::qpuel,
-        /*HasJIT=*/true> Y(TheQpuelTarget, "qpuel", "Qpuel");
 }

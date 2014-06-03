@@ -966,8 +966,7 @@ unsigned ELFObjectFile<ELFT>::getArch() const {
     return (ELFT::TargetEndianness == support::little) ? Triple::mipsel
                                                        : Triple::mips;
   case ELF::EM_QPU:	// llvm-objdump -t -r
-    return (ELFT::TargetEndianness == support::little) ?
-           Triple::qpuel : Triple::qpu;
+    return Triple::qpu;
   case ELF::EM_PPC64:
     return (ELFT::TargetEndianness == support::little) ? Triple::ppc64le
                                                        : Triple::ppc64;

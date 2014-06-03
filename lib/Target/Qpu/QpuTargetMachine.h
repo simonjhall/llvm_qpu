@@ -66,17 +66,6 @@ namespace llvm {
     virtual TargetPassConfig *createPassConfig(PassManagerBase &PM);
   };
 
-/// QpuebTargetMachine - Qpu32 big endian target machine.
-///
-class QpuebTargetMachine : public QpuTargetMachine {
-  virtual void anchor();
-public:
-  QpuebTargetMachine(const Target &T, StringRef TT,
-                      StringRef CPU, StringRef FS, const TargetOptions &Options,
-                      Reloc::Model RM, CodeModel::Model CM,
-                      CodeGenOpt::Level OL);
-};
-
 /// QpuelTargetMachine - Qpu32 little endian target machine.
 ///
 class QpuelTargetMachine : public QpuTargetMachine {

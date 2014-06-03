@@ -54,8 +54,7 @@ public:
     mipsel,  // MIPSEL: mipsel, mipsallegrexel
     mips64,  // MIPS64: mips64
     mips64el,// MIPS64EL: mips64el
-    qpu,    // For Tutorial Backend Qpu
-    qpuel,
+    qpu,     // BCM2835: qpu
     msp430,  // MSP430: msp430
     ppc,     // PPC: powerpc
     ppc64,   // PPC64: powerpc64, ppu

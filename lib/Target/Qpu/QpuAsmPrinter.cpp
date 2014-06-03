@@ -317,5 +317,4 @@ void QpuAsmPrinter::PrintDebugValueComment(const MachineInstr *MI,
 // Force static initialization.
 extern "C" void LLVMInitializeQpuAsmPrinter() {
   RegisterAsmPrinter<QpuAsmPrinter> X(TheQpuTarget);
-  RegisterAsmPrinter<QpuAsmPrinter> Y(TheQpuelTarget);
 }

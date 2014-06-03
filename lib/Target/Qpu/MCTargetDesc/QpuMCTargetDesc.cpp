@@ -55,7 +55,7 @@ static std::string ParseQpuTriple(StringRef TT, StringRef CPU) {
     TheTriple = TT.substr(0,DashPosition);
   }
 
-  if (TheTriple == "qpu" || TheTriple == "qpuel") {
+  if (TheTriple == "qpu") {
       QpuArchFeature = "+qpu32I";
   }
   return QpuArchFeature;
@@ -141,49 +141,34 @@ createMCAsmStreamer(MCContext &Ctx, formatted_raw_ostream &OS,
 extern "C" void LLVMInitializeQpuTargetMC() {
   // Register the MC asm info.
   RegisterMCAsmInfoFn X(TheQpuTarget, createQpuMCAsmInfo);
-  RegisterMCAsmInfoFn Y(TheQpuelTarget, createQpuMCAsmInfo);
 
   // Register the MC codegen info.
   TargetRegistry::RegisterMCCodeGenInfo(TheQpuTarget,
                                         createQpuMCCodeGenInfo);
-  TargetRegistry::RegisterMCCodeGenInfo(TheQpuelTarget,
-                                        createQpuMCCodeGenInfo);
   // Register the MC instruction info.
   TargetRegistry::RegisterMCInstrInfo(TheQpuTarget, createQpuMCInstrInfo);
-  TargetRegistry::RegisterMCInstrInfo(TheQpuelTarget, createQpuMCInstrInfo);
 
   // Register the MC register info.
   TargetRegistry::RegisterMCRegInfo(TheQpuTarget, createQpuMCRegisterInfo);
-  TargetRegistry::RegisterMCRegInfo(TheQpuelTarget, createQpuMCRegisterInfo);
 
   // Register the MC Code Emitter
   TargetRegistry::RegisterMCCodeEmitter(TheQpuTarget,
                                         createQpuMCCodeEmitterEB);
-  TargetRegistry::RegisterMCCodeEmitter(TheQpuelTarget,
-                                        createQpuMCCodeEmitterEL);
 
   // Register the object streamer.
   TargetRegistry::RegisterMCObjectStreamer(TheQpuTarget, createMCStreamer);
-  TargetRegistry::RegisterMCObjectStreamer(TheQpuelTarget, createMCStreamer);
 
   // Register the asm streamer.
   TargetRegistry::RegisterAsmStreamer(TheQpuTarget, createMCAsmStreamer);
-  TargetRegistry::RegisterAsmStreamer(TheQpuelTarget, createMCAsmStreamer);
 
   // Register the asm backend.
   TargetRegistry::RegisterMCAsmBackend(TheQpuTarget,
                                        createQpuAsmBackendEB32);
-  TargetRegistry::RegisterMCAsmBackend(TheQpuelTarget,
-                                       createQpuAsmBackendEL32);
   // Register the MC subtarget info.
   TargetRegistry::RegisterMCSubtargetInfo(TheQpuTarget,
                                           createQpuMCSubtargetInfo);
-  TargetRegistry::RegisterMCSubtargetInfo(TheQpuelTarget,
-                                          createQpuMCSubtargetInfo);
   // Register the MCInstPrinter.
   TargetRegistry::RegisterMCInstPrinter(TheQpuTarget,
-                                        createQpuMCInstPrinter);
-  TargetRegistry::RegisterMCInstPrinter(TheQpuelTarget,
                                         createQpuMCInstPrinter);
   // lbd document - mark - RegisterMCInstPrinter
 }

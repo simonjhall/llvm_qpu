@@ -20,10 +20,8 @@ using namespace llvm;
 
 extern "C" void LLVMInitializeQpuTarget() {
   // Register the target.
-  //- Big endian Target Machine
-  RegisterTargetMachine<QpuebTargetMachine> X(TheQpuTarget);
   //- Little endian Target Machine
-  RegisterTargetMachine<QpuelTargetMachine> Y(TheQpuelTarget);
+  RegisterTargetMachine<QpuelTargetMachine> X(TheQpuTarget);
 }
 
 // DataLayout --> Big-endian, 32-bit pointer/ABI/alignment
@@ -50,15 +48,6 @@ QpuTargetMachine(const Target &T, StringRef TT,
     TLInfo(*this), TSInfo(*this) {
   initAsmInfo();
 }
-
-void QpuebTargetMachine::anchor() { }
-
-QpuebTargetMachine::
-QpuebTargetMachine(const Target &T, StringRef TT,
-                    StringRef CPU, StringRef FS, const TargetOptions &Options,
-                    Reloc::Model RM, CodeModel::Model CM,
-                    CodeGenOpt::Level OL)
-  : QpuTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL, false) {}
 
 void QpuelTargetMachine::anchor() { }
 

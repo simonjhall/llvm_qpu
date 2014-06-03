@@ -29,7 +29,6 @@ class Target;
 class raw_ostream;
 
 extern Target TheQpuTarget;
-extern Target TheQpuelTarget;
 
 MCCodeEmitter *createQpuMCCodeEmitterEB(const MCInstrInfo &MCII,
                                          const MCRegisterInfo &MRI,
