@@ -256,11 +256,14 @@ getMachineOpValue(const MCInst &MI, const MCOperand &MO,
   case MCSymbolRefExpr::VK_Qpu_GOT:
     FixupKind = Qpu::fixup_Qpu_GOT_Local;
     break;
-  case MCSymbolRefExpr::VK_Qpu_ABS_HI:
+  /*case MCSymbolRefExpr::VK_Qpu_ABS_HI:
     FixupKind = Qpu::fixup_Qpu_HI16;
     break;
   case MCSymbolRefExpr::VK_Qpu_ABS_LO:
     FixupKind = Qpu::fixup_Qpu_LO16;
+    break;*/
+  case MCSymbolRefExpr::VK_Qpu_ABS_HILO:
+    FixupKind = Qpu::fixup_Qpu_HILO;
     break;
   case MCSymbolRefExpr::VK_Qpu_GOT_HI16:
     FixupKind = Qpu::fixup_Qpu_GOT_HI16;

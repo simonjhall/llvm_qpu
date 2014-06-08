@@ -275,8 +275,9 @@ StringRef MCSymbolRefExpr::getVariantKindName(VariantKind Kind) {
   case VK_Qpu_GOT_CALL: return "GOT_CALL";
   case VK_Qpu_GOT16: return "GOT16";
   case VK_Qpu_GOT: return "GOT";
-  case VK_Qpu_ABS_HI: return "ABS_HI";
-  case VK_Qpu_ABS_LO: return "ABS_LO";
+//  case VK_Qpu_ABS_HI: return "ABS_HI";
+//  case VK_Qpu_ABS_LO: return "ABS_LO";
+  case VK_Qpu_ABS_HILO: return "ABS_HILO";
   case VK_Qpu_TLSGD: return "TLSGD";
   case VK_Qpu_TLSLDM: return "TLSLDM";
   case VK_Qpu_DTPREL_HI: return "DTPREL_HI";

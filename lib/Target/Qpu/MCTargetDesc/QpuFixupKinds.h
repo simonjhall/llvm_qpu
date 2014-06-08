@@ -30,10 +30,11 @@ namespace Qpu {
     fixup_Qpu_32,
 
     // Pure upper 16 bit fixup resulting in - R_QPU_HI16.
-    fixup_Qpu_HI16,
+//    fixup_Qpu_HI16,
 
     // Pure lower 16 bit fixup resulting in - R_QPU_LO16.
-    fixup_Qpu_LO16,
+//    fixup_Qpu_LO16,
+    fixup_Qpu_HILO,
 
     // Pure lower 16 bit fixup resulting in - R_QPU_GPREL16.
     fixup_Qpu_GPREL16,

@@ -52,8 +52,9 @@ MCOperand QpuMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
   case QpuII::MO_GOT:       Kind = MCSymbolRefExpr::VK_Qpu_GOT; break;
 // ABS_HI and ABS_LO is for llc -march=qpu -relocation-model=static (global 
 //  var in .data).
-  case QpuII::MO_ABS_HI:    Kind = MCSymbolRefExpr::VK_Qpu_ABS_HI; break;
-  case QpuII::MO_ABS_LO:    Kind = MCSymbolRefExpr::VK_Qpu_ABS_LO; break;
+//  case QpuII::MO_ABS_HI:    Kind = MCSymbolRefExpr::VK_Qpu_ABS_HI; break;
+//  case QpuII::MO_ABS_LO:    Kind = MCSymbolRefExpr::VK_Qpu_ABS_LO; break;
+  case QpuII::MO_ABS_HILO:    Kind = MCSymbolRefExpr::VK_Qpu_ABS_HILO; break;
   case QpuII::MO_GOT_HI16:  Kind = MCSymbolRefExpr::VK_Qpu_GOT_HI16; break;
   case QpuII::MO_GOT_LO16:  Kind = MCSymbolRefExpr::VK_Qpu_GOT_LO16; break;
   }
@@ -115,7 +116,7 @@ void QpuMCInstLower::LowerCPLOAD(SmallVector<MCInst, 4>& MCInsts) {
   const MCSymbol *Sym = Ctx->GetOrCreateSymbol(SymName);
   const MCSymbolRefExpr *MCSym;
 
-  MCSym = MCSymbolRefExpr::Create(Sym, MCSymbolRefExpr::VK_Qpu_ABS_HI, *Ctx);
+  /*MCSym = MCSymbolRefExpr::Create(Sym, MCSymbolRefExpr::VK_Qpu_ABS_HI, *Ctx);
   MCOperand SymHi = MCOperand::CreateExpr(MCSym);
   MCSym = MCSymbolRefExpr::Create(Sym, MCSymbolRefExpr::VK_Qpu_ABS_LO, *Ctx);
   MCOperand SymLo = MCOperand::CreateExpr(MCSym);
@@ -124,6 +125,14 @@ void QpuMCInstLower::LowerCPLOAD(SmallVector<MCInst, 4>& MCInsts) {
 
   CreateMCInst(MCInsts[0], Qpu::LUi, GPReg, SymHi);
   CreateMCInst(MCInsts[1], Qpu::ADDiu, GPReg, GPReg, SymLo);
+  CreateMCInst(MCInsts[2], Qpu::ADDu, GPReg, GPReg, T9Reg);*/
+
+  MCSym = MCSymbolRefExpr::Create(Sym, MCSymbolRefExpr::VK_Qpu_ABS_HILO, *Ctx);
+  MCOperand SymHiLo = MCOperand::CreateExpr(MCSym);
+
+  MCInsts.resize(2);
+
+  CreateMCInst(MCInsts[0], Qpu::LUi, GPReg, SymHiLo);
   CreateMCInst(MCInsts[2], Qpu::ADDu, GPReg, GPReg, T9Reg);
 } // lbd document - mark - LowerCPLOAD
 

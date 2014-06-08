@@ -31,10 +31,11 @@ namespace llvm {
 
       // Get the Higher 16 bits from a 32-bit immediate
       // No relation with Qpu Hi register
-      Hi,
+//      Hi,
       // Get the Lower 16 bits from a 32-bit immediate
       // No relation with Qpu Lo register
-      Lo,
+//      Lo,
+      HiLo,
 
       // Handle gp_rel (small data/bss sections) relocation.
       GPRel,

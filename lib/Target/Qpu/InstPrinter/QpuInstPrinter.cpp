@@ -61,8 +61,9 @@ static void printExpr(const MCExpr *Expr, raw_ostream &OS) {
   case MCSymbolRefExpr::VK_Qpu_GOT_CALL:  OS << "%call16("; break;
   case MCSymbolRefExpr::VK_Qpu_GOT16:     OS << "%got(";    break;
   case MCSymbolRefExpr::VK_Qpu_GOT:       OS << "%got(";    break;
-  case MCSymbolRefExpr::VK_Qpu_ABS_HI:    OS << "%hi(";     break;
-  case MCSymbolRefExpr::VK_Qpu_ABS_LO:    OS << "%lo(";     break;
+//  case MCSymbolRefExpr::VK_Qpu_ABS_HI:    OS << "%hi(";     break;
+//  case MCSymbolRefExpr::VK_Qpu_ABS_LO:    OS << "%lo(";     break;
+  case MCSymbolRefExpr::VK_Qpu_ABS_HILO:    OS << "";     break;
   case MCSymbolRefExpr::VK_Qpu_GOT_HI16:  OS << "%got_hi("; break;
   case MCSymbolRefExpr::VK_Qpu_GOT_LO16:  OS << "%got_lo("; break;
   }

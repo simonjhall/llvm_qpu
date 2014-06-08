@@ -104,11 +104,14 @@ unsigned QpuELFObjectWriter::GetRelocType(const MCValue &Target,
   case Qpu::fixup_Qpu_32:
     Type = ELF::R_QPU_32;
     break;
-  case Qpu::fixup_Qpu_HI16:
+  /*case Qpu::fixup_Qpu_HI16:
     Type = ELF::R_QPU_HI16;
     break;
   case Qpu::fixup_Qpu_LO16:
     Type = ELF::R_QPU_LO16;
+    break;*/
+  case Qpu::fixup_Qpu_HILO:
+    Type = ELF::R_QPU_HILO;
     break;
   case Qpu::fixup_Qpu_GPREL16:
     Type = ELF::R_QPU_GPREL16;
@@ -143,9 +146,11 @@ static bool NeedsMatchingLo(const MCAssembler &Asm, const RelEntry &R) {
     return false;
 
   MCSymbolData &SD = Asm.getSymbolData(R.Sym->AliasedSymbol());
-
+/*
   return ((R.Reloc.Type == ELF::R_QPU_GOT16) && !SD.isExternal()) ||
-    (R.Reloc.Type == ELF::R_QPU_HI16);
+    (R.Reloc.Type == ELF::R_QPU_HI16);*/
+  assert(0);
+  return false;
 }
 
 static bool HasMatchingLo(const MCAssembler &Asm, RelLsIter I, RelLsIter Last) {
@@ -153,9 +158,10 @@ static bool HasMatchingLo(const MCAssembler &Asm, RelLsIter I, RelLsIter Last) {
     return false;
 
   RelLsIter Hi = I++;
-
-  return (I->Reloc.Type == ELF::R_QPU_LO16) && (Hi->Sym == I->Sym) &&
-    (Hi->Offset == I->Offset);
+  assert(0);
+  /*return (I->Reloc.Type == ELF::R_QPU_LO16) && (Hi->Sym == I->Sym) &&
+    (Hi->Offset == I->Offset);*/
+  return false;
 }
 
 static bool HasSameSymbol(const RelEntry &R0, const RelEntry &R1) {
@@ -196,7 +202,7 @@ void QpuELFObjectWriter::sortRelocs(const MCAssembler &Asm,
     RelLsIter LoPos = RelocLs.end(), HiPos = *U;
     bool MatchedLo = false;
 
-    for (RelLsIter R = RelocLs.begin(); R != RelocLs.end(); ++R) {
+    /*for (RelLsIter R = RelocLs.begin(); R != RelocLs.end(); ++R) {
       if ((R->Reloc.Type == ELF::R_QPU_LO16) && HasSameSymbol(*HiPos, *R) &&
           (CompareOffset(*R, *HiPos) >= 0) &&
           ((LoPos == RelocLs.end()) || ((CompareOffset(*R, *LoPos) < 0)) ||
@@ -205,7 +211,8 @@ void QpuELFObjectWriter::sortRelocs(const MCAssembler &Asm,
 
       MatchedLo = NeedsMatchingLo(Asm, *R) &&
         HasMatchingLo(Asm, R, --RelocLs.end());
-    }
+    }*/
+    assert(0);
 
     // If a matching LoPos was found, move HiPos and insert it before LoPos.
     // Make the offsets of HiPos and LoPos match.

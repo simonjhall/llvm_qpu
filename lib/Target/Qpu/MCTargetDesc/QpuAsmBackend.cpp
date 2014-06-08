@@ -33,10 +33,12 @@ static unsigned adjustFixupValue(unsigned Kind, uint64_t Value) {
   switch (Kind) {
   default:
     return 0;
+  case Qpu::fixup_Qpu_HILO:
+	  return Value;
   case FK_GPRel_4:
   case FK_Data_4:
   case Qpu::fixup_Qpu_CALL16:
-  case Qpu::fixup_Qpu_LO16:
+//  case Qpu::fixup_Qpu_LO16:
   case Qpu::fixup_Qpu_GOT_LO16:
     break;
   case Qpu::fixup_Qpu_PC16:
@@ -49,7 +51,7 @@ static unsigned adjustFixupValue(unsigned Kind, uint64_t Value) {
   case Qpu::fixup_Qpu_24:
     // So far we are only using this type for instruction SWI.
     break;
-  case Qpu::fixup_Qpu_HI16:
+//  case Qpu::fixup_Qpu_HI16:
   case Qpu::fixup_Qpu_GOT_Local:
   case Qpu::fixup_Qpu_GOT_HI16:
     // Get the higher 16-bits. Also add 1 if bit 15 is 1.
@@ -134,8 +136,9 @@ public:
       // name                        offset  bits  flags
       { "fixup_Qpu_24",             0,     24,   0 },
       { "fixup_Qpu_32",             0,     32,   0 },
-      { "fixup_Qpu_HI16",           0,     16,   0 },
-      { "fixup_Qpu_LO16",           0,     16,   0 },
+//      { "fixup_Qpu_HI16",           0,     16,   0 },
+//      { "fixup_Qpu_LO16",           0,     16,   0 },
+      { "fixup_Qpu_HILO",           0,     32,   0 },
       { "fixup_Qpu_GPREL16",        0,     16,   0 },
       { "fixup_Qpu_GOT_Global",     0,     16,   0 },
       { "fixup_Qpu_GOT_Local",      0,     16,   0 },

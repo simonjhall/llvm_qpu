@@ -50,8 +50,9 @@ namespace QpuII {
 
     /// MO_ABS_HI/LO - Represents the hi or low part of an absolute symbol
     /// address.
-    MO_ABS_HI,
-    MO_ABS_LO,
+//    MO_ABS_HI,
+//    MO_ABS_LO,
+    MO_ABS_HILO,
 
     /// MO_TLSGD - Represents the offset into the global offset table at which
     // the module ID and TSL block offset reside during execution (General

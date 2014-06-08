@@ -72,9 +72,11 @@ SDValue QpuTargetLowering::getAddrLocal(SDValue Op, SelectionDAG &DAG) const {
   SDValue Load = DAG.getLoad(Ty, DL, DAG.getEntryNode(), GOT,
                              MachinePointerInfo::getGOT(), false, false, false,
                              0);
-  unsigned LoFlag = QpuII::MO_ABS_LO;
-  SDValue Lo = DAG.getNode(QpuISD::Lo, DL, Ty, getTargetNode(Op, DAG, LoFlag));
-  return DAG.getNode(ISD::ADD, DL, Ty, Load, Lo);
+//  unsigned LoFlag = QpuII::MO_ABS_LO;
+//  SDValue Lo = DAG.getNode(QpuISD::HiLo, DL, Ty, getTargetNode(Op, DAG, LoFlag));
+//  return DAG.getNode(ISD::ADD, DL, Ty, Load, Lo);
+  assert(0);
+  return Load;
 }
 
 SDValue QpuTargetLowering::getAddrGlobal(SDValue Op, SelectionDAG &DAG,
@@ -90,25 +92,29 @@ SDValue QpuTargetLowering::getAddrGlobal(SDValue Op, SelectionDAG &DAG,
 SDValue QpuTargetLowering::getAddrGlobalLargeGOT(SDValue Op, SelectionDAG &DAG,
                                                   unsigned HiFlag,
                                                   unsigned LoFlag) const {
-  SDLoc DL = SDLoc(Op);
+
+/*SDLoc DL = SDLoc(Op);
   EVT Ty = Op.getValueType();
   SDValue Hi = DAG.getNode(QpuISD::Hi, DL, Ty, getTargetNode(Op, DAG, HiFlag));
   Hi = DAG.getNode(ISD::ADD, DL, Ty, Hi, getGlobalReg(DAG, Ty));
   SDValue Wrapper = DAG.getNode(QpuISD::Wrapper, DL, Ty, Hi,
                                 getTargetNode(Op, DAG, LoFlag));
   return DAG.getLoad(Ty, DL, DAG.getEntryNode(), Wrapper,
-                     MachinePointerInfo::getGOT(), false, false, false, 0);
+                     MachinePointerInfo::getGOT(), false, false, false, 0);*/
+	assert(0);
+	return SDValue();
 }
 
 const char *QpuTargetLowering::getTargetNodeName(unsigned Opcode) const {
   switch (Opcode) {
   case QpuISD::JmpLink:           return "QpuISD::JmpLink";
-  case QpuISD::Hi:                return "QpuISD::Hi";
-  case QpuISD::Lo:                return "QpuISD::Lo";
+//  case QpuISD::Hi:                return "QpuISD::Hi";
+//  case QpuISD::Lo:                return "QpuISD::Lo";
+  case QpuISD::HiLo:                return "QpuISD::HiLo";
   case QpuISD::GPRel:             return "QpuISD::GPRel";
   case QpuISD::Ret:               return "QpuISD::Ret";
-  case QpuISD::DivRem:            return "QpuISD::DivRem";
-  case QpuISD::DivRemU:           return "QpuISD::DivRemU";
+//  case QpuISD::DivRem:            return "QpuISD::DivRem";
+//  case QpuISD::DivRemU:           return "QpuISD::DivRemU";
   case QpuISD::Wrapper:           return "QpuISD::Wrapper";
   default:                         return NULL;
   }
@@ -157,6 +163,7 @@ QpuTargetLowering(QpuTargetMachine &TM)
   setOperationAction(ISD::BR_CC,             MVT::i32, Expand);
   setOperationAction(ISD::SELECT_CC,         MVT::Other, Expand);
   setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i32,  Expand);
+  setOperationAction(ISD::ROTL,              MVT::i32,   Expand);
 
   // Support va_arg(): variable numbers (not fixed numbers) of arguments 
   //  (parameters) for function all
@@ -167,11 +174,11 @@ QpuTargetLowering(QpuTargetMachine &TM)
   //setTargetDAGCombine(ISD::SDIVREM);
   //setTargetDAGCombine(ISD::UDIVREM);
 
-//- Set .align 2
-// It will emit .align 2 later
-  setMinFunctionAlignment(2);
+  setMinFunctionAlignment(3);
 
   setStackPointerRegisterToSaveRestore(Qpu::SP);
+
+  MaxStoresPerMemcpy = 16;
 
 // must, computeRegisterProperties - Once all of the register classes are 
 //  added, this allows us to compute derived properties we expose.
@@ -295,13 +302,17 @@ SDValue QpuTargetLowering::LowerGlobalAddress(SDValue Op,
       return DAG.getNode(ISD::ADD, DL, MVT::i32, GOT, GPRelNode);
     }
     // %hi/%lo relocation
-    SDValue GAHi = DAG.getTargetGlobalAddress(GV, DL, MVT::i32, 0,
+    /*SDValue GAHi = DAG.getTargetGlobalAddress(GV, DL, MVT::i32, 0,
                                               QpuII::MO_ABS_HI);
     SDValue GALo = DAG.getTargetGlobalAddress(GV, DL, MVT::i32, 0,
                                               QpuII::MO_ABS_LO);
     SDValue HiPart = DAG.getNode(QpuISD::Hi, DL, VTs, &GAHi, 1);
     SDValue Lo = DAG.getNode(QpuISD::Lo, DL, MVT::i32, GALo);
-    return DAG.getNode(ISD::ADD, DL, MVT::i32, HiPart, Lo);
+    return DAG.getNode(ISD::ADD, DL, MVT::i32, HiPart, Lo);*/
+
+    SDValue GAHiLo = DAG.getTargetGlobalAddress(GV, DL, MVT::i32, 0,
+                                              QpuII::MO_ABS_HILO);
+    return DAG.getNode(QpuISD::HiLo, DL, MVT::i32, GAHiLo);
   }
 
   if (GV->hasInternalLinkage() || (GV->hasLocalLinkage() && !isa<Function>(GV)))
@@ -551,8 +562,9 @@ QpuTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
 
       // Use GOT+LO if callee has internal linkage.
       if (CalleeLo.getNode()) {
-        SDValue Lo = DAG.getNode(QpuISD::Lo, DL, getPointerTy(), CalleeLo);
-        Callee = DAG.getNode(ISD::ADD, DL, getPointerTy(), LoadValue, Lo);
+//        SDValue Lo = DAG.getNode(QpuISD::Lo, DL, getPointerTy(), CalleeLo);
+//        Callee = DAG.getNode(ISD::ADD, DL, getPointerTy(), LoadValue, Lo);
+    	  assert(0);
       } else
         Callee = LoadValue;
     }

@@ -39,8 +39,9 @@ def QpuJmpLink : SDNode<"QpuISD::JmpLink",SDT_QpuJmpLink,
 // Hi and Lo nodes are used to handle global addresses. Used on
 // QpuISelLowering to lower stuff like GlobalAddress, ExternalSymbol
 // static model. (nothing to do with Qpu Registers Hi and Lo)
-def QpuHi    : SDNode<"QpuISD::Hi", SDTIntUnaryOp>;
-def QpuLo    : SDNode<"QpuISD::Lo", SDTIntUnaryOp>;
+//def QpuHi    : SDNode<"QpuISD::Hi", SDTIntUnaryOp>;
+//def QpuLo    : SDNode<"QpuISD::Lo", SDTIntUnaryOp>;
+def QpuHiLo    : SDNode<"QpuISD::HiLo", SDTIntUnaryOp>;
 def QpuGPRel : SDNode<"QpuISD::GPRel", SDTIntUnaryOp>;
 
 // Return
@@ -267,7 +268,7 @@ multiclass LoadM32<bits<8> op, string instr_asm, PatFrag OpNode,
 // 32-bit store.
 multiclass StoreM32<bits<8> op, string instr_asm, PatFrag OpNode,
                     bit Pseudo = 0> {
-  def #NAME# : StoreM<op, instr_asm, OpNode, CPURegs, mem, Pseudo>;
+  def #NAME# : StoreM<op, instr_asm, OpNode, GPRAccRARB, mem, Pseudo>;
 //	def #NAME# : StoreM<op, instr_asm, OpNode, StAddrDest, mem, Pseudo>;
 }
 
@@ -499,17 +500,19 @@ defm SH     : StoreM32<0x08, "store_half", truncstorei16_a>;
 
 /// Arithmetic Instructions (ALU Immediate)
 // IR "add" defined in include/llvm/Target/TargetSelectionDAG.td, line 315 (def add).
-def ADDiu   : ArithLogicI<0x09, "add", add, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
-def SUBiu   : ArithLogicI<0x09, "sub", sub, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
-def ANDi    : ArithLogicI<0x0c, "and", and, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
-def ORi     : ArithLogicI<0x0d, "or", or, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
-def ORi_ns     : ArithLogicI<0x0d, "orns", or, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
-def ORi_nc     : ArithLogicI<0x0d, "ornc", or, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
-def ORi_zs     : ArithLogicI<0x0d, "orzs", or, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
-def ORi_zc     : ArithLogicI<0x0d, "orzc", or, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
-def XORi    : ArithLogicI<0x0e, "xor", xor, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
-def SHLi    : ArithLogicI<0x0e, "shl", shl, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
-def SRAi    : ArithLogicI<0x0e, "asr", sra, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRARB>;
+def ADDiu   : ArithLogicI<0x09, "add", add, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def SUBiu   : ArithLogicI<0x09, "sub", sub, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def ANDi    : ArithLogicI<0x0c, "and", and, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def ORi     : ArithLogicI<0x0d, "or", or, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def ORi_ns     : ArithLogicI<0x0d, "orns", or, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def ORi_nc     : ArithLogicI<0x0d, "ornc", or, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def ORi_zs     : ArithLogicI<0x0d, "orzs", or, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def ORi_zc     : ArithLogicI<0x0d, "orzc", or, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def XORi    : ArithLogicI<0x0e, "xor", xor, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def SHLi    : ArithLogicI<0x0e, "shl", shl, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def SRAi    : ArithLogicI<0x0e, "asr", sra, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def SRLi    : ArithLogicI<0x0e, "shr", srl, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
+def RORi    : ArithLogicI<0x0e, "ror", rotr, Operand<i32>, immSmallInt, GPRAccRARB, GPRAccRA>;
 def LUi     : LoadUpper<0x0f, "il", GPRAccRARB, Operand<i32>>;
 
 def LUi_al  : LoadUpperCC<0x0f, "il", GPRAccRARB, CPURegs, Operand<i32>>;
@@ -522,7 +525,7 @@ def LUi_cc  : LoadUpperCC<0x0f, "ilcc", GPRAccRARB, CPURegs, Operand<i32>>;
 
 /// Arithmetic Instructions (3-Operand, R-Type)
 def CMP     : CmpInstr<0x10, IIAlu, GPRAccRA, GPRAccRB, SR, 0>;
-def FADD     : ArithLogicR<0x13, "fadd", fadd, IIAlu, GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP, 1>;
+//def FADD     : ArithLogicR<0x13, "fadd", fadd, IIAlu, GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP, 1>;
 def ADDu     : ArithLogicR<0x13, "add", add, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 //def ADDe     : ArithLogicR<0x13, "adde", adde, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 def SUBu     : ArithLogicR<0x14, "sub", sub, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB>;
@@ -533,7 +536,8 @@ def XOR     : ArithLogicR<0x1a, "xor", xor, IIAlu, GPRAccRARB, GPRAccRA, GPRAccR
 
 def SHL     : ArithLogicR<0x19, "shl", shl, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 0>;
 def SRA     : ArithLogicR<0x1a, "asr", sra, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 0>;
-def SHR     : ArithLogicR<0x19, "shr", shl, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 0>;
+def SRL     : ArithLogicR<0x1a, "shr", srl, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 0>;
+def ROR     : ArithLogicR<0x1a, "ror", rotr, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 0>;
 
 def MOVE    : MoveFromClassToClass<0x46, "mov", GPRAccRARB, GPRAccRARB>;
 def BROADCAST    : MoveFromClassToClassDup<0x46, "v8min", GPRAcc5, GPRAccRARB>;
@@ -849,15 +853,15 @@ def : Pat<(QpuJmpLink (i32 texternalsym:$dst)),
           (JSUB texternalsym:$dst)>;
 
 // hi/lo relocs
-/*def : Pat<(QpuHi tglobaladdr:$in), (SHL (ADDiu ZERO_IN, tglobaladdr:$in), 16)>;
-def : Pat<(QpuHi tglobaladdr:$in), (LUi tglobaladdr:$in)>;
+//def : Pat<(QpuHi tglobaladdr:$in), (SHL (LUi tglobaladdr:$in), 16)>;
+def : Pat<(QpuHiLo tglobaladdr:$in), (LUi tglobaladdr:$in)>;
 
-def : Pat<(add CPURegs:$hi, (QpuLo tglobaladdr:$lo)),
-          (ADDiu CPURegs:$hi, tglobaladdr:$lo)>;
+//def : Pat<(add CPURegs:$hi, (QpuLo tglobaladdr:$lo)),
+//          (ADDiu CPURegs:$hi, tglobaladdr:$lo)>;
 
 // gp_rel relocs
 def : Pat<(add CPURegs:$gp, (QpuGPRel tglobaladdr:$in)),
-          (ADDiu CPURegs:$gp, tglobaladdr:$in)>;*/
+          (ADDiu CPURegs:$gp, tglobaladdr:$in)>;
 
 /*def : Pat<(not CPURegs:$in),
 // 1: in == 0; 0: in != 0
