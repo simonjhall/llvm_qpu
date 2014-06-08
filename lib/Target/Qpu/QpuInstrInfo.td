@@ -170,6 +170,16 @@ class ArithLogicR<bits<8> op, string instr_asm, SDNode OpNode,
   let isReMaterializable = 1;
 }
 
+class ArithLogicR1<bits<8> op, string instr_asm, SDNode OpNode,
+                  InstrItinClass itin, RegisterClass RD, RegisterClass RC>:
+  FA<op, (outs RD:$ra), (ins RC:$rb),
+     !strconcat(instr_asm, "\t$ra, $rb, $rb"),
+     [(set RD:$ra, (OpNode RC:$rb))], itin> {
+  let shamt = 0;
+  let isCommutable = 0;
+  let isReMaterializable = 1;
+}
+
 class CmpInstr<bits<8> op,
                InstrItinClass itin, RegisterClass RCa, RegisterClass RCb, RegisterClass RD,
                bit isComm = 0>:
@@ -260,7 +270,8 @@ class StoreM<bits<8> op, string instr_asm, PatFrag OpNode, RegisterClass RC,
 // 32-bit load.
 multiclass LoadM32<bits<8> op, string instr_asm, PatFrag OpNode,
                    bit Pseudo = 0> {
-  def #NAME# : LoadM<op, instr_asm, OpNode, GPRAccRARB, mem, Pseudo>;
+	def #NAME# : LoadM<op, instr_asm, OpNode, GPRAccRARB, mem, Pseudo>;
+	def #NAME#_F32 : LoadM<op, instr_asm, OpNode, GPRAccRARB_FP, mem, Pseudo>;
 //	def #NAME# : LoadM<op, instr_asm, OpNode, LdAddrDest, mem, Pseudo>;
 //	def #NAME# : LoadM<op, instr_asm, OpNode, LdDest, mem, Pseudo>;
 }
@@ -268,8 +279,8 @@ multiclass LoadM32<bits<8> op, string instr_asm, PatFrag OpNode,
 // 32-bit store.
 multiclass StoreM32<bits<8> op, string instr_asm, PatFrag OpNode,
                     bit Pseudo = 0> {
-  def #NAME# : StoreM<op, instr_asm, OpNode, GPRAccRARB, mem, Pseudo>;
-//	def #NAME# : StoreM<op, instr_asm, OpNode, StAddrDest, mem, Pseudo>;
+	def #NAME# : StoreM<op, instr_asm, OpNode, GPRAccRARB, mem, Pseudo>;
+	def #NAME#_F32 : StoreM<op, instr_asm, OpNode, GPRAccRARB_FP, mem, Pseudo>;
 }
 
 // Conditional Branch, e.g. JEQ brtarget24
@@ -525,7 +536,6 @@ def LUi_cc  : LoadUpperCC<0x0f, "ilcc", GPRAccRARB, CPURegs, Operand<i32>>;
 
 /// Arithmetic Instructions (3-Operand, R-Type)
 def CMP     : CmpInstr<0x10, IIAlu, GPRAccRA, GPRAccRB, SR, 0>;
-//def FADD     : ArithLogicR<0x13, "fadd", fadd, IIAlu, GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP, 1>;
 def ADDu     : ArithLogicR<0x13, "add", add, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 //def ADDe     : ArithLogicR<0x13, "adde", adde, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 def SUBu     : ArithLogicR<0x14, "sub", sub, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB>;
@@ -542,6 +552,12 @@ def ROR     : ArithLogicR<0x1a, "ror", rotr, IIAlu, GPRAccRARB, GPRAccRA, GPRAcc
 def MOVE    : MoveFromClassToClass<0x46, "mov", GPRAccRARB, GPRAccRARB>;
 def BROADCAST    : MoveFromClassToClassDup<0x46, "v8min", GPRAcc5, GPRAccRARB>;
 def SET_FLAGS    : MoveFromClassToClassDupNopDest<0x46, "ors", SR, GPRAcc5>;
+
+def FADD     : ArithLogicR<0x13, "fadd", fadd, IIAlu, GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP, 1>;
+def FMUL     : ArithLogicR<0x13, "fmul", fmul, IIAlu, GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP, 1>;
+def FSUB     : ArithLogicR<0x13, "fsub", fsub, IIAlu, GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP, 0>;
+def FTOI     : ArithLogicR1<0x13, "ftoi", fp_to_sint, IIAlu, GPRAccRARB, GPRAccRARB_FP>;
+def ITOF     : ArithLogicR1<0x13, "itof", sint_to_fp, IIAlu, GPRAccRARB_FP, GPRAccRARB>;
 
 //def MOVE     : ArithLogicR<0x1a, "move", xor, IIAlu, LdAddrDest, 1>;
 

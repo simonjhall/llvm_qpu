@@ -95,11 +95,7 @@ def CPURegsFP : RegisterClass<"Qpu", [f32], 32, (add
   RA0, RA1, RA2, RA3,
   RB0, RB1, RB2, RB3,
   ACC0, ACC1, ACC2, ACC3, ACC5,
-  SW,
-  // Callee save
-  // Reserved
-  GP, FP,
-  SP, LR, PC)>;
+  SW)>;
 
 // Status Registers class
 def SR   : RegisterClass<"Qpu", [i32], 32, (add SW)>;

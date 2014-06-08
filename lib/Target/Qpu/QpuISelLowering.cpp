@@ -128,6 +128,7 @@ QpuTargetLowering(QpuTargetMachine &TM)
 
   // Set up the register classes
   addRegisterClass(MVT::i32, &Qpu::CPURegsRegClass);
+  addRegisterClass(MVT::f32, &Qpu::CPURegsRegClass);
 
   // Qpu does not have i1 type, so use i32 for
   // setcc operations results (slt, sgt, ...).
@@ -164,6 +165,8 @@ QpuTargetLowering(QpuTargetMachine &TM)
   setOperationAction(ISD::SELECT_CC,         MVT::Other, Expand);
   setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i32,  Expand);
   setOperationAction(ISD::ROTL,              MVT::i32,   Expand);
+
+  setOperationAction(ISD::FP_TO_UINT,        MVT::i32,   Expand);
 
   // Support va_arg(): variable numbers (not fixed numbers) of arguments 
   //  (parameters) for function all

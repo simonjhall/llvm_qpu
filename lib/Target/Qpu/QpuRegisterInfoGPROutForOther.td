@@ -19,7 +19,7 @@ def GPRAccRB : RegisterClass<"Qpu", [i32], 32, (add ACC0, ACC1, ACC2, ACC3,
 		RB0, RB1, RB2, RB3, RB4, RB5, RB6, RB7)>;
 
 def GPRAcc5 : RegisterClass<"Qpu", [i32], 32, (add ACC5)>;
-/*
+
 
 //32-bit float
 def GPROnlyAcc_FP : RegisterClass<"Qpu", [f32], 32, (add ACC0, ACC1, ACC2, ACC3)>;
@@ -38,4 +38,3 @@ def GPRAccRB_FP : RegisterClass<"Qpu", [f32], 32, (add ACC0, ACC1, ACC2, ACC3,
 
 def GPRAcc5_FP : RegisterClass<"Qpu", [f32], 32, (add ACC5)>;
 
-*/
