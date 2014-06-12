@@ -133,10 +133,21 @@ SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset) {
     }
   }
 
+  bool isVpm = false;
+
+  if (Parent)
+  {
+	unsigned AddrSpace = cast<MemSDNode>(Parent)->getPointerInfo().getAddrSpace();
+
+	if (AddrSpace == 1)		//VPM
+		isVpm = true;
+  }
+
   // if Address is FI, get the TargetFrameIndex.
   if (FrameIndexSDNode *FIN = dyn_cast<FrameIndexSDNode>(Addr)) {
     Base   = CurDAG->getTargetFrameIndex(FIN->getIndex(), ValTy);
     Offset = CurDAG->getTargetConstant(0, ValTy);
+    assert(!isVpm);
     return true;
   }
 
@@ -144,6 +155,7 @@ SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset) {
   if (Addr.getOpcode() == QpuISD::Wrapper) {
     Base   = Addr.getOperand(0);
     Offset = Addr.getOperand(1);
+    assert(!isVpm);
     return true;
   }
 
@@ -165,13 +177,13 @@ SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset) {
       else
         Base = Addr.getOperand(0);
 
-      Offset = CurDAG->getTargetConstant(CN->getZExtValue(), ValTy);
+      Offset = CurDAG->getTargetConstant((CN->getZExtValue() & 0xffff) | (isVpm ? 0x100000 : 0), ValTy);
       return true;
     }
   } // lbd document - mark - if (CurDAG->isBaseWithConstantOffset(Addr))
 
   Base   = Addr;
-  Offset = CurDAG->getTargetConstant(0, ValTy);
+  Offset = CurDAG->getTargetConstant(isVpm ? 0x100000 : 0, ValTy);
   return true;
 } // lbd document - mark - SelectAddr
 
