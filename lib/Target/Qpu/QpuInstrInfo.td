@@ -180,11 +180,11 @@ class ArithLogicR1<bits<8> op, string instr_asm, SDNode OpNode,
   let isReMaterializable = 1;
 }
 
-class CmpInstr<bits<8> op,
+class CmpInstr<bits<8> op, string instr_asm,
                InstrItinClass itin, RegisterClass RCa, RegisterClass RCb, RegisterClass RD,
                bit isComm = 0>:
   FA<op, (outs RD:$rc), (ins RCa:$ra, RCb:$rb),
-     "sub\tacc5, $ra, $rb\n\tv8min acc5, acc5, acc5\n\tors wra_nop, acc5, acc5", [], itin> {
+     !strconcat(instr_asm, "\tacc5, $ra, $rb\n\tv8min acc5, acc5, acc5\n\tors wra_nop, acc5, acc5"), [], itin> {
   let rc = 0;
   let shamt = 0;
   let isCommutable = isComm;
@@ -535,7 +535,8 @@ def LUi_cs  : LoadUpperCC<0x0f, "ilcs", GPRAccRARB, CPURegs, Operand<i32>>;
 def LUi_cc  : LoadUpperCC<0x0f, "ilcc", GPRAccRARB, CPURegs, Operand<i32>>;
 
 /// Arithmetic Instructions (3-Operand, R-Type)
-def CMP     : CmpInstr<0x10, IIAlu, GPRAccRA, GPRAccRB, SR, 0>;
+def CMP_i32     : CmpInstr<0x10, "sub", IIAlu, GPRAccRA, GPRAccRB, SR, 0>;
+def CMP_f32     : CmpInstr<0x10, "fsub", IIAlu, GPRAccRA_FP, GPRAccRB_FP, SR, 0>;
 def ADDu     : ArithLogicR<0x13, "add", add, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 //def ADDe     : ArithLogicR<0x13, "adde", adde, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 def SUBu     : ArithLogicR<0x14, "sub", sub, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB>;
@@ -624,17 +625,18 @@ def MFSW    : MoveFromSW<0x50, "mfsw", CPURegs, [SW]>;
 def MTSW    : MoveToSW<0x51, "mtsw", CPURegs, [SW]>;*/
 
 
-class CmpInstrSub<bits<8> op,
+class CmpInstrSub<bits<8> op, string instr_asm,
                InstrItinClass itin, RegisterClass RCa, RegisterClass RCb, RegisterClass RD>:
   FA<op, (outs RD:$rc), (ins RCa:$ra, RCb:$rb),
-     "subs\twra_nop, $ra, $rb", [], itin> {
+     !strconcat(instr_asm, "\twra_nop, $ra, $rb"), [], itin> {
   let rc = 0;
   let shamt = 0;
   let isCommutable = 0;
   let Predicates = [HasCmp];
 } // lbd document - mark - class CmpInstr
 
-def CMP_INTERNAL     : CmpInstrSub<0x10, IIAlu, GPRAccRA, GPRAccRB, SR>;
+def CMP_INTERNAL_i32     : CmpInstrSub<0x10, "subs", IIAlu, GPRAccRA, GPRAccRB, SR>;
+def CMP_INTERNAL_f32     : CmpInstrSub<0x10, "fsubs", IIAlu, GPRAccRA, GPRAccRB, SR>;
 
 def JZERO     : CBranch24<0x35, "blaallzs", SR, [SW]>;
 def JONE     : CBranch24<0x35, "blaallzc", SR, [SW]>;
@@ -646,136 +648,145 @@ def JEQ     : CBranch24<0x35, "blaallzc", SR, [SW]>;
  * branch if one for lt
  * branch if zero for ge
  */
-def : Pat<(brcond (i32 (setge CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
-          (JZERO (SET_FLAGS
-        		  (BROADCAST
-					  (LUi_ns
-						  (LUi_al
-								  (CMP_INTERNAL
-										  CPURegs:$lhs,
-										  CPURegs:$rhs),
-								  0),
-							1)
-					  )
-				  ), bb:$dst)>;
-def : Pat<(brcond (i32 (setuge CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
-          (JZERO (SET_FLAGS
-        		  (BROADCAST
-					  (LUi_ns
-						  (LUi_al
-								  (CMP_INTERNAL
-										  CPURegs:$lhs,
-										  CPURegs:$rhs),
-								  0),
-							1)
-					  )
-				  ), bb:$dst)>;
+multiclass BranchComparisons<RegisterClass RC, ValueType type, Instruction CMP_INTERNAL> {
+	def : Pat<(brcond (type (setge RC:$lhs, RC:$rhs)), bb:$dst),
+			  (JZERO (SET_FLAGS
+					  (BROADCAST
+						  (LUi_ns
+							  (LUi_al
+									  (CMP_INTERNAL
+											  RC:$lhs,
+											  RC:$rhs),
+									  0),
+								1)
+						  )
+					  ), bb:$dst)>;
+	def : Pat<(brcond (type (setuge RC:$lhs, RC:$rhs)), bb:$dst),
+			  (JZERO (SET_FLAGS
+					  (BROADCAST
+						  (LUi_ns
+							  (LUi_al
+									  (CMP_INTERNAL
+											  RC:$lhs,
+											  RC:$rhs),
+									  0),
+								1)
+						  )
+					  ), bb:$dst)>;
 
-def : Pat<(brcond (i32 (setlt CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
-          (JONE (SET_FLAGS
-        		  (BROADCAST
-					  (LUi_ns
-						  (LUi_al
-								  (CMP_INTERNAL
-										  CPURegs:$lhs,
-										  CPURegs:$rhs),
-								  0),
-							1)
-					  )
-				  ), bb:$dst)>;
-def : Pat<(brcond (i32 (setult CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
-          (JONE (SET_FLAGS
-        		  (BROADCAST
-					  (LUi_ns
-						  (LUi_al
-								  (CMP_INTERNAL
-										  CPURegs:$lhs,
-										  CPURegs:$rhs),
-								  0),
-							1)
-					  )
-				  ), bb:$dst)>;
+	def : Pat<(brcond (type (setlt RC:$lhs, RC:$rhs)), bb:$dst),
+			  (JONE (SET_FLAGS
+					  (BROADCAST
+						  (LUi_ns
+							  (LUi_al
+									  (CMP_INTERNAL
+											  RC:$lhs,
+											  RC:$rhs),
+									  0),
+								1)
+						  )
+					  ), bb:$dst)>;
+	def : Pat<(brcond (type (setult RC:$lhs, RC:$rhs)), bb:$dst),
+			  (JONE (SET_FLAGS
+					  (BROADCAST
+						  (LUi_ns
+							  (LUi_al
+									  (CMP_INTERNAL
+											  RC:$lhs,
+											  RC:$rhs),
+									  0),
+								1)
+						  )
+					  ), bb:$dst)>;
 
-//swapped inputs around
-def : Pat<(brcond (i32 (setle CPURegs:$rhs, CPURegs:$lhs)), bb:$dst),
-          (JZERO (SET_FLAGS
-        		  (BROADCAST
-					  (LUi_ns
-						  (LUi_al
-								  (CMP_INTERNAL
-										  CPURegs:$lhs,
-										  CPURegs:$rhs),
-								  0),
-							1)
-					  )
-				  ), bb:$dst)>;
-def : Pat<(brcond (i32 (setule CPURegs:$rhs, CPURegs:$lhs)), bb:$dst),
-          (JZERO (SET_FLAGS
-        		  (BROADCAST
-					  (LUi_ns
-						  (LUi_al
-								  (CMP_INTERNAL
-										  CPURegs:$lhs,
-										  CPURegs:$rhs),
-								  0),
-							1)
-					  )
-				  ), bb:$dst)>;
+	//swapped inputs around
+	def : Pat<(brcond (type (setle RC:$rhs, RC:$lhs)), bb:$dst),
+			  (JZERO (SET_FLAGS
+					  (BROADCAST
+						  (LUi_ns
+							  (LUi_al
+									  (CMP_INTERNAL
+											  RC:$lhs,
+											  RC:$rhs),
+									  0),
+								1)
+						  )
+					  ), bb:$dst)>;
+	def : Pat<(brcond (type (setule RC:$rhs, RC:$lhs)), bb:$dst),
+			  (JZERO (SET_FLAGS
+					  (BROADCAST
+						  (LUi_ns
+							  (LUi_al
+									  (CMP_INTERNAL
+											  RC:$lhs,
+											  RC:$rhs),
+									  0),
+								1)
+						  )
+					  ), bb:$dst)>;
 
-def : Pat<(brcond (i32 (setgt CPURegs:$rhs, CPURegs:$lhs)), bb:$dst),
-          (JONE (SET_FLAGS
-        		  (BROADCAST
-					  (LUi_ns
-						  (LUi_al
-								  (CMP_INTERNAL
-										  CPURegs:$lhs,
-										  CPURegs:$rhs),
-								  0),
-							1)
-					  )
-				  ), bb:$dst)>;
-def : Pat<(brcond (i32 (setugt CPURegs:$rhs, CPURegs:$lhs)), bb:$dst),
-          (JONE (SET_FLAGS
-        		  (BROADCAST
-					  (LUi_ns
-						  (LUi_al
-								  (CMP_INTERNAL
-										  CPURegs:$lhs,
-										  CPURegs:$rhs),
-								  0),
-							1)
-					  )
-				  ), bb:$dst)>;
+	def : Pat<(brcond (type (setgt RC:$rhs, RC:$lhs)), bb:$dst),
+			  (JONE (SET_FLAGS
+					  (BROADCAST
+						  (LUi_ns
+							  (LUi_al
+									  (CMP_INTERNAL
+											  RC:$lhs,
+											  RC:$rhs),
+									  0),
+								1)
+						  )
+					  ), bb:$dst)>;
+	def : Pat<(brcond (type (setugt RC:$rhs, RC:$lhs)), bb:$dst),
+			  (JONE (SET_FLAGS
+					  (BROADCAST
+						  (LUi_ns
+							  (LUi_al
+									  (CMP_INTERNAL
+											  RC:$lhs,
+											  RC:$rhs),
+									  0),
+								1)
+						  )
+					  ), bb:$dst)>;
 
-/*
- * eq, 1 = eq (zero), 0 = ne (non-zero)
- */
-def : Pat<(brcond (i32 (seteq CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
-          (JONE (SET_FLAGS
-        		  (BROADCAST
-					  (LUi_zs
-						  (LUi_al
-								  (CMP_INTERNAL
-										  CPURegs:$lhs,
-										  CPURegs:$rhs),
-								  0),
-							1)
-					  )
-				  ), bb:$dst)>;
+	/*
+	 * eq, 1 = eq (zero), 0 = ne (non-zero)
+	 */
+	def : Pat<(brcond (type (seteq RC:$lhs, RC:$rhs)), bb:$dst),
+			  (JONE (SET_FLAGS
+					  (BROADCAST
+						  (LUi_zs
+							  (LUi_al
+									  (CMP_INTERNAL
+											  RC:$lhs,
+											  RC:$rhs),
+									  0),
+								1)
+						  )
+					  ), bb:$dst)>;
 
-def : Pat<(brcond (i32 (setne CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
-          (JZERO (SET_FLAGS
-        		  (BROADCAST
-					  (LUi_zs
-						  (LUi_al
-								  (CMP_INTERNAL
-										  CPURegs:$lhs,
-										  CPURegs:$rhs),
-								  0),
-							1)
-					  )
-				  ), bb:$dst)>;
+	def : Pat<(brcond (type (setne RC:$lhs, RC:$rhs)), bb:$dst),
+			  (JZERO (SET_FLAGS
+					  (BROADCAST
+						  (LUi_zs
+							  (LUi_al
+									  (CMP_INTERNAL
+											  RC:$lhs,
+											  RC:$rhs),
+									  0),
+								1)
+						  )
+					  ), bb:$dst)>;
+}
 
+/*def : Pat<(setne GPRAccRARB_FP:$lhs, GPRAccRARB_FP:$rhs),
+			  (FSUB
+											  GPRAccRARB_FP:$lhs,
+											  GPRAccRARB_FP:$rhs)>;
+*/
+defm : BranchComparisons<GPRAccRARB, i32, CMP_INTERNAL_i32>;
+//defm : BranchComparisons<GPRAccRARB_FP, f32, CMP_INTERNAL_f32>;
 
 /*def : Pat<(brcond (i32 (seteq CPURegs:$lhs, CPURegs:$rhs)), bb:$dst),
           (JEQ
@@ -974,7 +985,7 @@ defm : BrcondPatsSlt<CPURegs, BEQ, BNE, SLT, SLTu, SLTi, SLTiu, ZERO>;
 
 // setcc for cmp instruction
 
-multiclass SeteqPatsCmp<RegisterClass RC> {
+multiclass SeteqPatsCmp<RegisterClass RC, Instruction CMP> {
 	//z set
 // a == b
   /*def : Pat<(seteq RC:$lhs, RC:$rhs),
@@ -990,7 +1001,7 @@ multiclass SeteqPatsCmp<RegisterClass RC> {
 }
 
 // a < b
-multiclass SetltPatsCmp<RegisterClass RC> {
+multiclass SetltPatsCmp<RegisterClass RC, Instruction CMP> {
   def : Pat<(setlt RC:$lhs, RC:$rhs),
             (ORi_ns (LUi_al (CMP RC:$lhs, RC:$rhs), 0), 1)>;
 // if qpu  `define N    `SW[31]  instead of `SW[0] // Negative flag, then need
@@ -1004,7 +1015,7 @@ multiclass SetltPatsCmp<RegisterClass RC> {
 }
 
 // a <= b
-multiclass SetlePatsCmp<RegisterClass RC> {
+multiclass SetlePatsCmp<RegisterClass RC, Instruction CMP> {
   def : Pat<(setle RC:$lhs, RC:$rhs),
 // a <= b is equal to (XORi (b < a), 1)
             //(XORi (ANDi (CMP RC:$rhs, RC:$lhs), 1), 1)>;
@@ -1017,7 +1028,7 @@ multiclass SetlePatsCmp<RegisterClass RC> {
 }
 
 // a > b
-multiclass SetgtPatsCmp<RegisterClass RC> {
+multiclass SetgtPatsCmp<RegisterClass RC, Instruction CMP> {
   def : Pat<(setgt RC:$lhs, RC:$rhs),
 // a > b is equal to b < a is equal to setlt(b, a)
             //(ANDi (CMP RC:$rhs, RC:$lhs), 1)>;
@@ -1030,7 +1041,7 @@ multiclass SetgtPatsCmp<RegisterClass RC> {
 }
 
 // a >= b
-multiclass SetgePatsCmp<RegisterClass RC> {
+multiclass SetgePatsCmp<RegisterClass RC, Instruction CMP> {
   def : Pat<(setge RC:$lhs, RC:$rhs),
 // a >= b is equal to b <= a
             //(XORi (ANDi (CMP RC:$lhs, RC:$rhs), 1), 1)>;
@@ -1097,11 +1108,20 @@ defm : SetgeImmPatsSlt<CPURegs, SLTi, SLTiu>;
 }*/
 
 let Predicates = [HasCmp] in {
-defm : SeteqPatsCmp<CPURegs>;
-defm : SetltPatsCmp<CPURegs>;
-defm : SetlePatsCmp<CPURegs>;
-defm : SetgtPatsCmp<CPURegs>;
-defm : SetgePatsCmp<CPURegs>;
+defm : SeteqPatsCmp<GPRAccRARB, CMP_i32>;
+defm : SeteqPatsCmp<GPRAccRARB_FP, CMP_f32>;
+
+defm : SetltPatsCmp<GPRAccRARB, CMP_i32>;
+defm : SetltPatsCmp<GPRAccRARB_FP, CMP_f32>;
+
+defm : SetlePatsCmp<GPRAccRARB, CMP_i32>;
+defm : SetlePatsCmp<GPRAccRARB_FP, CMP_f32>;
+
+defm : SetgtPatsCmp<GPRAccRARB, CMP_i32>;
+defm : SetgtPatsCmp<GPRAccRARB_FP, CMP_f32>;
+
+defm : SetgePatsCmp<GPRAccRARB, CMP_i32>;
+defm : SetgePatsCmp<GPRAccRARB_FP, CMP_f32>;
 }
 
 include "QpuCondMov.td"

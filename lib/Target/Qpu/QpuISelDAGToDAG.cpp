@@ -248,7 +248,7 @@ SDNode* QpuDAGToDAGISel::Select(SDNode *Node) {
     const QpuSubtarget &Subtarget = TM.getSubtarget<QpuSubtarget>();
     SDNode *Carry;
     {
-      SDNode *StatusWord = CurDAG->getMachineNode(Qpu::CMP_INTERNAL, DL, VT, Ops);
+      SDNode *StatusWord = CurDAG->getMachineNode(Qpu::CMP_INTERNAL_i32, DL, VT, Ops);
       SDValue Constant0 = CurDAG->getTargetConstant(0, VT);
       SDValue Constant1 = CurDAG->getTargetConstant(1, VT);
       Carry = CurDAG->getMachineNode(Qpu::LUi_al, DL, VT,
