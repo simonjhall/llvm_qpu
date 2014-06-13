@@ -77,8 +77,8 @@ def CPURegs : RegisterClass<"Qpu", [i32], 32, (add
   // Return Values and Arguments
 
   // Not preserved across procedure calls
-  RA0, RA1, RA2, RA3,
-  RB0, RB1, RB2, RB3,
+  RA0, RA1, RA2, RA3, RA4, RA5, RA6, RA7,
+  RB0, RB1, RB2, RB3, RB4, RB5, RB6, RB7,
   ACC0, ACC1, ACC2, ACC3, ACC5,
   SW,
   // Callee save
@@ -86,16 +86,35 @@ def CPURegs : RegisterClass<"Qpu", [i32], 32, (add
   GP, FP, 
   SP, LR, PC)>;
 
+
 def CPURegsFP : RegisterClass<"Qpu", [f32], 32, (add
   // Reserved
   ZERO_IN, ZERO_OUT, AT,
   // Return Values and Arguments
 
   // Not preserved across procedure calls
-  RA0, RA1, RA2, RA3,
-  RB0, RB1, RB2, RB3,
+  RA0, RA1, RA2, RA3, RA4, RA5, RA6, RA7,
+  RB0, RB1, RB2, RB3, RB4, RB5, RB6, RB7,
   ACC0, ACC1, ACC2, ACC3, ACC5,
   SW)>;
+
+//v16f32
+multiclass vec_regfile<ValueType type>
+{
+ def _rf : RegisterClass<"Qpu", [type], 512, (add
+  // Reserved
+  ZERO_IN, ZERO_OUT, AT,
+  // Return Values and Arguments
+
+  // Not preserved across procedure calls
+  RA0, RA1, RA2, RA3, RA4, RA5, RA6, RA7,
+  RB0, RB1, RB2, RB3, RB4, RB5, RB6, RB7,
+  ACC0, ACC1, ACC2, ACC3, ACC5,
+  SW)>;
+}
+  
+ defm F32x16 : vec_regfile<v16f32>;
+  
 
 // Status Registers class
 def SR   : RegisterClass<"Qpu", [i32], 32, (add SW)>;

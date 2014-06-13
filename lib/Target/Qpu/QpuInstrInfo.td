@@ -272,6 +272,7 @@ multiclass LoadM32<bits<8> op, string instr_asm, PatFrag OpNode,
                    bit Pseudo = 0> {
 	def #NAME# : LoadM<op, instr_asm, OpNode, GPRAccRARB, mem, Pseudo>;
 	def #NAME#_F32 : LoadM<op, instr_asm, OpNode, GPRAccRARB_FP, mem, Pseudo>;
+	def #NAME#_F32x16 : LoadM<op, instr_asm, OpNode, F32x16_GPRAccRARB_FP, mem, Pseudo>;
 //	def #NAME# : LoadM<op, instr_asm, OpNode, LdAddrDest, mem, Pseudo>;
 //	def #NAME# : LoadM<op, instr_asm, OpNode, LdDest, mem, Pseudo>;
 }
@@ -281,6 +282,7 @@ multiclass StoreM32<bits<8> op, string instr_asm, PatFrag OpNode,
                     bit Pseudo = 0> {
 	def #NAME# : StoreM<op, instr_asm, OpNode, GPRAccRARB, mem, Pseudo>;
 	def #NAME#_F32 : StoreM<op, instr_asm, OpNode, GPRAccRARB_FP, mem, Pseudo>;
+	def #NAME#_F32x16 : StoreM<op, instr_asm, OpNode, F32x16_GPRAccRARB_FP, mem, Pseudo>;
 }
 
 // Conditional Branch, e.g. JEQ brtarget24
@@ -554,11 +556,17 @@ def MOVE    : MoveFromClassToClass<0x46, "mov", GPRAccRARB, GPRAccRARB>;
 def BROADCAST    : MoveFromClassToClassDup<0x46, "v8min", GPRAcc5, GPRAccRARB>;
 def SET_FLAGS    : MoveFromClassToClassDupNopDest<0x46, "ors", SR, GPRAcc5>;
 
-def FADD     : ArithLogicR<0x13, "fadd", fadd, IIAlu, GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP, 1>;
-def FMUL     : ArithLogicR<0x13, "fmul", fmul, IIAlu, GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP, 1>;
-def FSUB     : ArithLogicR<0x13, "fsub", fsub, IIAlu, GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP, 0>;
-def FTOI     : ArithLogicR1<0x13, "ftoi", fp_to_sint, IIAlu, GPRAccRARB, GPRAccRARB_FP>;
-def ITOF     : ArithLogicR1<0x13, "itof", sint_to_fp, IIAlu, GPRAccRARB_FP, GPRAccRARB>;
+multiclass fp_ops<RegisterClass A, RegisterClass B, RegisterClass C>
+{
+	def _FADD     : ArithLogicR<0x13, "fadd", fadd, IIAlu, A, B, C, 1>;
+	def _FMUL     : ArithLogicR<0x13, "fmul", fmul, IIAlu, A, B, C, 1>;
+	def _FSUB     : ArithLogicR<0x13, "fsub", fsub, IIAlu, A, B, C, 0>;
+	def _FTOI     : ArithLogicR1<0x13, "ftoi", fp_to_sint, IIAlu, GPRAccRARB, A>;
+	def _ITOF     : ArithLogicR1<0x13, "itof", sint_to_fp, IIAlu, A, GPRAccRARB>;
+}
+
+defm F32 : fp_ops<GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP>;
+defm F32x16 : fp_ops<F32x16_GPRAccRARB_FP, F32x16_GPRAccRA_FP, F32x16_GPRAccRB_FP>;
 
 //def MOVE     : ArithLogicR<0x1a, "move", xor, IIAlu, LdAddrDest, 1>;
 
