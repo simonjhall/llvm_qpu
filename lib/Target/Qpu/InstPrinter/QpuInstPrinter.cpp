@@ -94,7 +94,12 @@ void QpuInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
   }
 
   if (Op.isImm()) {
-    O << Op.getImm();
+	  uint16_t imm = Op.getImm();
+    O << imm;
+
+    if (Op.getImm() & 0x100000)
+    	O << " vpm";
+
     return;
   }
 
