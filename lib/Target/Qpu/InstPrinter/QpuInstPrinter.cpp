@@ -94,12 +94,7 @@ void QpuInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
   }
 
   if (Op.isImm()) {
-	  uint16_t imm = Op.getImm();
-    O << imm;
-
-    if (Op.getImm() & 0x100000)
-    	O << " vpm";
-
+    O << Op.getImm();
     return;
   }
 
@@ -124,6 +119,12 @@ printMemOperand(const MCInst *MI, int opNum, raw_ostream &O) {
   printOperand(MI, opNum, O);
   O << ", ";
   printOperand(MI, opNum+1, O);
+
+  const MCOperand &Op = MI->getOperand(opNum+2);
+  assert(Op.isImm());
+
+  if (Op.getImm())
+	  O << ", vpm";
 }
 
 void QpuInstPrinter:: // lbd document - mark - printMemOperandEA

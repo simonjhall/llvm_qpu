@@ -87,7 +87,7 @@ def CPURegs : RegisterClass<"Qpu", [i32], 32, (add
   SP, LR, PC)>;
 
 
-def CPURegsFP : RegisterClass<"Qpu", [f32], 32, (add
+/*def CPURegsFP : RegisterClass<"Qpu", [f32], 32, (add
   // Reserved
   ZERO_IN, ZERO_OUT, AT,
   // Return Values and Arguments
@@ -96,12 +96,11 @@ def CPURegsFP : RegisterClass<"Qpu", [f32], 32, (add
   RA0, RA1, RA2, RA3, RA4, RA5, RA6, RA7,
   RB0, RB1, RB2, RB3, RB4, RB5, RB6, RB7,
   ACC0, ACC1, ACC2, ACC3, ACC5,
-  SW)>;
+  SW)>;*/
 
-//v16f32
-multiclass vec_regfile<ValueType type>
+multiclass vec_regfile<ValueType type, int alignment>
 {
- def _rf : RegisterClass<"Qpu", [type], 512, (add
+ def _rf : RegisterClass<"Qpu", [type], alignment, (add
   // Reserved
   ZERO_IN, ZERO_OUT, AT,
   // Return Values and Arguments
@@ -113,7 +112,11 @@ multiclass vec_regfile<ValueType type>
   SW)>;
 }
   
- defm F32x16 : vec_regfile<v16f32>;
+defm F32x1 : vec_regfile<f32, 32>;
+defm F32x2 : vec_regfile<v2f32, 512>;
+defm F32x4 : vec_regfile<v4f32, 512>;
+defm F32x8 : vec_regfile<v8f32, 512>;
+defm F32x16 : vec_regfile<v16f32, 512>;
   
 
 // Status Registers class

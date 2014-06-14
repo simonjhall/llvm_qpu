@@ -90,7 +90,7 @@ private:
 
   SDNode *Select(SDNode *N);
   // Complex Pattern.
-  bool SelectAddr(SDNode *Parent, SDValue N, SDValue &Base, SDValue &Offset);
+  bool SelectAddr(SDNode *Parent, SDValue N, SDValue &Base, SDValue &Offset, SDValue &VPM);
   // getImm - Return a target constant with the specified value.
   inline SDValue getImm(const SDNode *Node, unsigned Imm) {
     return CurDAG->getTargetConstant(Imm, Node->getValueType(0));
@@ -115,7 +115,7 @@ SDNode *QpuDAGToDAGISel::getGlobalBaseReg() {
 /// ComplexPattern used on QpuInstrInfo
 /// Used on Qpu Load/Store instructions
 bool QpuDAGToDAGISel::
-SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset) {
+SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset, SDValue &VPM) {
   EVT ValTy = Addr.getValueType();
 
   // If Parent is an unaligned f32 load or store, select a (base + index)
@@ -133,6 +133,8 @@ SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset) {
     }
   }
 
+  VPM = CurDAG->getTargetConstant(0, MVT::i1);
+
   bool isVpm = false;
 
   if (Parent)
@@ -140,7 +142,10 @@ SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset) {
 	unsigned AddrSpace = cast<MemSDNode>(Parent)->getPointerInfo().getAddrSpace();
 
 	if (AddrSpace == 1)		//VPM
+	{
 		isVpm = true;
+		VPM = CurDAG->getTargetConstant(1, MVT::i1);
+	}
   }
 
   // if Address is FI, get the TargetFrameIndex.
@@ -177,13 +182,13 @@ SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset) {
       else
         Base = Addr.getOperand(0);
 
-      Offset = CurDAG->getTargetConstant((CN->getZExtValue() & 0xffff) | (isVpm ? 0x100000 : 0), ValTy);
+      Offset = CurDAG->getTargetConstant(CN->getZExtValue(), ValTy);
       return true;
     }
   } // lbd document - mark - if (CurDAG->isBaseWithConstantOffset(Addr))
 
   Base   = Addr;
-  Offset = CurDAG->getTargetConstant(isVpm ? 0x100000 : 0, ValTy);
+  Offset = CurDAG->getTargetConstant(0, ValTy);
   return true;
 } // lbd document - mark - SelectAddr
 

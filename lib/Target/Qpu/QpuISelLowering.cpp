@@ -128,7 +128,10 @@ QpuTargetLowering(QpuTargetMachine &TM)
 
   // Set up the register classes
   addRegisterClass(MVT::i32, &Qpu::CPURegsRegClass);
-  addRegisterClass(MVT::f32, &Qpu::CPURegsFPRegClass);
+  addRegisterClass(MVT::f32, &Qpu::F32x1_rfRegClass);
+  addRegisterClass(MVT::v2f32, &Qpu::F32x2_rfRegClass);
+  addRegisterClass(MVT::v4f32, &Qpu::F32x4_rfRegClass);
+  addRegisterClass(MVT::v8f32, &Qpu::F32x8_rfRegClass);
   addRegisterClass(MVT::v16f32, &Qpu::F32x16_rfRegClass);
 
   // Qpu does not have i1 type, so use i32 for

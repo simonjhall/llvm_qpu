@@ -108,13 +108,13 @@ def shamt       : Operand<i32>;
 // Address operand
 def mem : Operand<i32> {
   let PrintMethod = "printMemOperand";
-  let MIOperandInfo = (ops CPURegs, Operand<i32>);
+  let MIOperandInfo = (ops CPURegs, Operand<i32>, Operand<i1>);
   let EncoderMethod = "getMemEncoding";
 }
 
 def mem_ea : Operand<i32> {
   let PrintMethod = "printMemOperandEA";
-  let MIOperandInfo = (ops CPURegs, Operand<i32>);
+  let MIOperandInfo = (ops CPURegs, Operand<i32>, Operand<i1>);
   let EncoderMethod = "getMemEncoding";
 }
 
@@ -129,7 +129,7 @@ def immLow16Zero : PatLeaf<(imm), [{
 
 // Qpu Address Mode! SDNode frameindex could possibily be a match
 // since load and store instructions from stack used it.
-def addr : ComplexPattern<iPTR, 2, "SelectAddr", [frameindex], [SDNPWantParent]>;
+def addr : ComplexPattern<iPTR, 3, "SelectAddr", [frameindex], [SDNPWantParent]>;
 
 //===----------------------------------------------------------------------===//
 // Pattern fragment for load/store
@@ -260,9 +260,9 @@ class LoadM<bits<8> op, string instr_asm, PatFrag OpNode, RegisterClass RC,
 }
 
 class StoreM<bits<8> op, string instr_asm, PatFrag OpNode, RegisterClass RC,
-             Operand MemOpnd, bit Pseudo>:
+             Operand MemOpnd, bit Pseudo, string bytecount>:
   FMem<op, (outs), (ins RC:$ra, MemOpnd:$addr),
-     !strconcat(instr_asm, "\t$ra, $addr, 1"),
+     !strconcat(!strconcat(instr_asm, "\t$ra, $addr, "), bytecount),
      [(OpNode RC:$ra, addr:$addr)], IIStore> {
   let isPseudo = Pseudo;
 }
@@ -271,7 +271,10 @@ class StoreM<bits<8> op, string instr_asm, PatFrag OpNode, RegisterClass RC,
 multiclass LoadM32<bits<8> op, string instr_asm, PatFrag OpNode,
                    bit Pseudo = 0> {
 	def #NAME# : LoadM<op, instr_asm, OpNode, GPRAccRARB, mem, Pseudo>;
-	def #NAME#_F32 : LoadM<op, instr_asm, OpNode, GPRAccRARB_FP, mem, Pseudo>;
+	def #NAME#_F32x1 : LoadM<op, instr_asm, OpNode, F32x1_GPRAccRARB_FP, mem, Pseudo>;
+	def #NAME#_F32x2 : LoadM<op, instr_asm, OpNode, F32x2_GPRAccRARB_FP, mem, Pseudo>;
+	def #NAME#_F32x4 : LoadM<op, instr_asm, OpNode, F32x4_GPRAccRARB_FP, mem, Pseudo>;
+	def #NAME#_F32x8 : LoadM<op, instr_asm, OpNode, F32x8_GPRAccRARB_FP, mem, Pseudo>;
 	def #NAME#_F32x16 : LoadM<op, instr_asm, OpNode, F32x16_GPRAccRARB_FP, mem, Pseudo>;
 //	def #NAME# : LoadM<op, instr_asm, OpNode, LdAddrDest, mem, Pseudo>;
 //	def #NAME# : LoadM<op, instr_asm, OpNode, LdDest, mem, Pseudo>;
@@ -280,9 +283,12 @@ multiclass LoadM32<bits<8> op, string instr_asm, PatFrag OpNode,
 // 32-bit store.
 multiclass StoreM32<bits<8> op, string instr_asm, PatFrag OpNode,
                     bit Pseudo = 0> {
-	def #NAME# : StoreM<op, instr_asm, OpNode, GPRAccRARB, mem, Pseudo>;
-	def #NAME#_F32 : StoreM<op, instr_asm, OpNode, GPRAccRARB_FP, mem, Pseudo>;
-	def #NAME#_F32x16 : StoreM<op, instr_asm, OpNode, F32x16_GPRAccRARB_FP, mem, Pseudo>;
+	def #NAME# : StoreM<op, instr_asm, OpNode, GPRAccRARB, mem, Pseudo, "1">;
+	def #NAME#_F32 : StoreM<op, instr_asm, OpNode, F32x1_GPRAccRARB_FP, mem, Pseudo, "1">;
+	def #NAME#_F32x2 : StoreM<op, instr_asm, OpNode, F32x2_GPRAccRARB_FP, mem, Pseudo, "2">;
+	def #NAME#_F32x4 : StoreM<op, instr_asm, OpNode, F32x4_GPRAccRARB_FP, mem, Pseudo, "4">;
+	def #NAME#_F32x8 : StoreM<op, instr_asm, OpNode, F32x8_GPRAccRARB_FP, mem, Pseudo, "8">;
+	def #NAME#_F32x16 : StoreM<op, instr_asm, OpNode, F32x16_GPRAccRARB_FP, mem, Pseudo, "16">;
 }
 
 // Conditional Branch, e.g. JEQ brtarget24
@@ -538,7 +544,7 @@ def LUi_cc  : LoadUpperCC<0x0f, "ilcc", GPRAccRARB, CPURegs, Operand<i32>>;
 
 /// Arithmetic Instructions (3-Operand, R-Type)
 def CMP_i32     : CmpInstr<0x10, "sub", IIAlu, GPRAccRA, GPRAccRB, SR, 0>;
-def CMP_f32     : CmpInstr<0x10, "fsub", IIAlu, GPRAccRA_FP, GPRAccRB_FP, SR, 0>;
+//def CMP_f32     : CmpInstr<0x10, "fsub", IIAlu, GPRAccRA_FP, GPRAccRB_FP, SR, 0>;
 def ADDu     : ArithLogicR<0x13, "add", add, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 //def ADDe     : ArithLogicR<0x13, "adde", adde, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 def SUBu     : ArithLogicR<0x14, "sub", sub, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB>;
@@ -565,7 +571,10 @@ multiclass fp_ops<RegisterClass A, RegisterClass B, RegisterClass C>
 	def _ITOF     : ArithLogicR1<0x13, "itof", sint_to_fp, IIAlu, A, GPRAccRARB>;
 }
 
-defm F32 : fp_ops<GPRAccRARB_FP, GPRAccRA_FP, GPRAccRB_FP>;
+defm F32x1 : fp_ops<F32x1_GPRAccRARB_FP, F32x1_GPRAccRA_FP, F32x1_GPRAccRB_FP>;
+defm F32x2 : fp_ops<F32x2_GPRAccRARB_FP, F32x2_GPRAccRA_FP, F32x2_GPRAccRB_FP>;
+defm F32x4 : fp_ops<F32x4_GPRAccRARB_FP, F32x4_GPRAccRA_FP, F32x4_GPRAccRB_FP>;
+defm F32x8 : fp_ops<F32x8_GPRAccRARB_FP, F32x8_GPRAccRA_FP, F32x8_GPRAccRB_FP>;
 defm F32x16 : fp_ops<F32x16_GPRAccRARB_FP, F32x16_GPRAccRA_FP, F32x16_GPRAccRB_FP>;
 
 //def MOVE     : ArithLogicR<0x1a, "move", xor, IIAlu, LdAddrDest, 1>;
@@ -1117,19 +1126,19 @@ defm : SetgeImmPatsSlt<CPURegs, SLTi, SLTiu>;
 
 let Predicates = [HasCmp] in {
 defm : SeteqPatsCmp<GPRAccRARB, CMP_i32>;
-defm : SeteqPatsCmp<GPRAccRARB_FP, CMP_f32>;
+//defm : SeteqPatsCmp<GPRAccRARB_FP, CMP_f32>;
 
 defm : SetltPatsCmp<GPRAccRARB, CMP_i32>;
-defm : SetltPatsCmp<GPRAccRARB_FP, CMP_f32>;
+//defm : SetltPatsCmp<GPRAccRARB_FP, CMP_f32>;
 
 defm : SetlePatsCmp<GPRAccRARB, CMP_i32>;
-defm : SetlePatsCmp<GPRAccRARB_FP, CMP_f32>;
+//defm : SetlePatsCmp<GPRAccRARB_FP, CMP_f32>;
 
 defm : SetgtPatsCmp<GPRAccRARB, CMP_i32>;
-defm : SetgtPatsCmp<GPRAccRARB_FP, CMP_f32>;
+//defm : SetgtPatsCmp<GPRAccRARB_FP, CMP_f32>;
 
 defm : SetgePatsCmp<GPRAccRARB, CMP_i32>;
-defm : SetgePatsCmp<GPRAccRARB_FP, CMP_f32>;
+//defm : SetgePatsCmp<GPRAccRARB_FP, CMP_f32>;
 }
 
 include "QpuCondMov.td"
