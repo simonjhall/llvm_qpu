@@ -41,8 +41,8 @@ multiclass vec_sub_regfile<ValueType type, int alignment>
 }
 
 defm F32x1 : vec_sub_regfile<f32, 32>;
-defm F32x2 : vec_sub_regfile<v2f32, 512>;
-defm F32x4 : vec_sub_regfile<v4f32, 512>;
-defm F32x8 : vec_sub_regfile<v8f32, 512>;
+defm F32x2 : vec_sub_regfile<v2f32, 64>;
+defm F32x4 : vec_sub_regfile<v4f32, 128>;
+defm F32x8 : vec_sub_regfile<v8f32, 256>;
 defm F32x16 : vec_sub_regfile<v16f32, 512>;
 

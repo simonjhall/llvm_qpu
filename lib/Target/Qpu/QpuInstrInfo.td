@@ -170,6 +170,18 @@ class ArithLogicR<bits<8> op, string instr_asm, SDNode OpNode,
   let isReMaterializable = 1;
 }
 
+//def MOV_zc_zs   : ArithLogicRCC<0x19, "zc", "zs", IIAlu, GPRAccRARB, SR, GPRAccRA, GPRAccRB, 1>;
+class ArithLogicRCC<bits<8> op, string condleft, string condright,
+                  InstrItinClass itin, RegisterClass RD, RegisterClass RSW,
+                  RegisterClass RCa, RegisterClass RCb, bit isComm = 0>:
+  FA<op, (outs RD:$ra), (ins RSW:$sw, RCa:$rb, RCb:$rc),
+     !strconcat(!strconcat(!strconcat(!strconcat("or", condleft), "\t$ra, $rb, $rc;\t\tv8min"), condright), "\t$ra, $rb, $rc"),
+     [], itin> {
+  let shamt = 0;
+  let isCommutable = isComm;	// e.g. add rb rc =  add rc rb
+  let isReMaterializable = 1;
+}
+
 class ArithLogicR1<bits<8> op, string instr_asm, SDNode OpNode,
                   InstrItinClass itin, RegisterClass RD, RegisterClass RC>:
   FA<op, (outs RD:$ra), (ins RC:$rb),
@@ -185,6 +197,17 @@ class CmpInstr<bits<8> op, string instr_asm,
                bit isComm = 0>:
   FA<op, (outs RD:$rc), (ins RCa:$ra, RCb:$rb),
      !strconcat(instr_asm, "\tacc5, $ra, $rb\n\tv8min acc5, acc5, acc5\n\tors wra_nop, acc5, acc5"), [], itin> {
+  let rc = 0;
+  let shamt = 0;
+  let isCommutable = isComm;
+  let Predicates = [HasCmp];
+} // lbd document - mark - class CmpInstr
+
+class CmpInstrFP<bits<8> op, string instr_asm,
+               InstrItinClass itin, RegisterClass RCa, RegisterClass RCb, RegisterClass RD,
+               bit isComm = 0>:
+  FA<op, (outs RD:$rc), (ins RCa:$ra, RCb:$rb),
+     !strconcat(instr_asm, "\tacc5, $ra, $rb\n\tv8min acc5, acc5, acc5\n\tfsubs wra_nop, acc5, 0"), [], itin> {
   let rc = 0;
   let shamt = 0;
   let isCommutable = isComm;
@@ -544,13 +567,14 @@ def LUi_cc  : LoadUpperCC<0x0f, "ilcc", GPRAccRARB, CPURegs, Operand<i32>>;
 
 /// Arithmetic Instructions (3-Operand, R-Type)
 def CMP_i32     : CmpInstr<0x10, "sub", IIAlu, GPRAccRA, GPRAccRB, SR, 0>;
-//def CMP_f32     : CmpInstr<0x10, "fsub", IIAlu, GPRAccRA_FP, GPRAccRB_FP, SR, 0>;
 def ADDu     : ArithLogicR<0x13, "add", add, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 //def ADDe     : ArithLogicR<0x13, "adde", adde, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 def SUBu     : ArithLogicR<0x14, "sub", sub, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB>;
 def MUL     : ArithLogicR<0x17, "mul24", mul, IIImul, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 def AND     : ArithLogicR<0x18, "and", and, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 def OR      : ArithLogicR<0x19, "or", or, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
+def MOV_zc_zs   : ArithLogicRCC<0x19, "zc", "zs", IIAlu, GPRAccRARB, SR, GPRAccRA, GPRAccRB, 0>;
+def MOV_nc_ns   : ArithLogicRCC<0x19, "nc", "ns", IIAlu, GPRAccRARB, SR, GPRAccRA, GPRAccRB, 0>;
 def XOR     : ArithLogicR<0x1a, "xor", xor, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 1>;
 
 def SHL     : ArithLogicR<0x19, "shl", shl, IIAlu, GPRAccRARB, GPRAccRA, GPRAccRB, 0>;
@@ -569,6 +593,9 @@ multiclass fp_ops<RegisterClass A, RegisterClass B, RegisterClass C>
 	def _FSUB     : ArithLogicR<0x13, "fsub", fsub, IIAlu, A, B, C, 0>;
 	def _FTOI     : ArithLogicR1<0x13, "ftoi", fp_to_sint, IIAlu, GPRAccRARB, A>;
 	def _ITOF     : ArithLogicR1<0x13, "itof", sint_to_fp, IIAlu, A, GPRAccRARB>;
+
+	def _MOV_nc_ns   : ArithLogicRCC<0x19, "nc", "ns", IIAlu, A, SR, B, C, 0>;
+	def _CMP_f32     : CmpInstrFP<0x10, "fsub", IIAlu, B, C, SR, 0>;
 }
 
 defm F32x1 : fp_ops<F32x1_GPRAccRARB_FP, F32x1_GPRAccRA_FP, F32x1_GPRAccRB_FP>;
@@ -1018,7 +1045,7 @@ multiclass SeteqPatsCmp<RegisterClass RC, Instruction CMP> {
 }
 
 // a < b
-multiclass SetltPatsCmp<RegisterClass RC, Instruction CMP> {
+multiclass SetltPatsCmp<RegisterClass RC, Instruction CMP, Instruction MOV_nc_ns> {
   def : Pat<(setlt RC:$lhs, RC:$rhs),
             (ORi_ns (LUi_al (CMP RC:$lhs, RC:$rhs), 0), 1)>;
 // if qpu  `define N    `SW[31]  instead of `SW[0] // Negative flag, then need
@@ -1029,6 +1056,14 @@ multiclass SetltPatsCmp<RegisterClass RC, Instruction CMP> {
 
   def : Pat<(setult RC:$lhs, RC:$rhs),
             (ORi_ns (LUi_al (CMP RC:$lhs, RC:$rhs), 0), 1)>;
+
+  //r0 > r1 ? r2 : r3
+  def : Pat<(selectcc RC:$r0, RC:$r1, RC:$r2, RC:$r3, SETLT),
+		  (MOV_nc_ns (CMP RC:$r0, RC:$r1), RC:$r3, RC:$r2)>;
+
+  //r0 > r1 ? r2 : r3
+  def : Pat<(selectcc RC:$r0, RC:$r1, RC:$r2, RC:$r3, SETOLT),
+		  (MOV_nc_ns (CMP RC:$r0, RC:$r1), RC:$r3, RC:$r2)>;
 }
 
 // a <= b
@@ -1045,7 +1080,7 @@ multiclass SetlePatsCmp<RegisterClass RC, Instruction CMP> {
 }
 
 // a > b
-multiclass SetgtPatsCmp<RegisterClass RC, Instruction CMP> {
+multiclass SetgtPatsCmp<RegisterClass RC, Instruction CMP, Instruction MOV_nc_ns> {
   def : Pat<(setgt RC:$lhs, RC:$rhs),
 // a > b is equal to b < a is equal to setlt(b, a)
             //(ANDi (CMP RC:$rhs, RC:$lhs), 1)>;
@@ -1055,6 +1090,14 @@ multiclass SetgtPatsCmp<RegisterClass RC, Instruction CMP> {
 
   def : Pat<(setugt RC:$lhs, RC:$rhs),
             (ORi_ns (LUi_al (CMP RC:$rhs, RC:$lhs), 0), 1)>;
+
+  //r0 > r1 ? r2 : r3
+  def : Pat<(selectcc RC:$r0, RC:$r1, RC:$r2, RC:$r3, SETGT),
+		  (MOV_nc_ns (CMP RC:$r1, RC:$r0), RC:$r3, RC:$r2)>;
+
+  //r0 > r1 ? r2 : r3
+  def : Pat<(selectcc RC:$r0, RC:$r1, RC:$r2, RC:$r3, SETOGT),
+		  (MOV_nc_ns (CMP RC:$r1, RC:$r0), RC:$r3, RC:$r2)>;
 }
 
 // a >= b
@@ -1128,14 +1171,14 @@ let Predicates = [HasCmp] in {
 defm : SeteqPatsCmp<GPRAccRARB, CMP_i32>;
 //defm : SeteqPatsCmp<GPRAccRARB_FP, CMP_f32>;
 
-defm : SetltPatsCmp<GPRAccRARB, CMP_i32>;
-//defm : SetltPatsCmp<GPRAccRARB_FP, CMP_f32>;
+defm : SetltPatsCmp<GPRAccRARB, CMP_i32, MOV_nc_ns>;
+defm : SetltPatsCmp<F32x1_GPRAccRARB_FP, F32x1_CMP_f32, F32x1_MOV_nc_ns>;
 
 defm : SetlePatsCmp<GPRAccRARB, CMP_i32>;
 //defm : SetlePatsCmp<GPRAccRARB_FP, CMP_f32>;
 
-defm : SetgtPatsCmp<GPRAccRARB, CMP_i32>;
-//defm : SetgtPatsCmp<GPRAccRARB_FP, CMP_f32>;
+defm : SetgtPatsCmp<GPRAccRARB, CMP_i32, MOV_nc_ns>;
+defm : SetgtPatsCmp<F32x1_GPRAccRARB_FP, F32x1_CMP_f32, F32x1_MOV_nc_ns>;
 
 defm : SetgePatsCmp<GPRAccRARB, CMP_i32>;
 //defm : SetgePatsCmp<GPRAccRARB_FP, CMP_f32>;

@@ -124,7 +124,7 @@ printMemOperand(const MCInst *MI, int opNum, raw_ostream &O) {
   assert(Op.isImm());
 
   if (Op.getImm())
-	  O << ", vpm";
+	  O << " vpm";
 }
 
 void QpuInstPrinter:: // lbd document - mark - printMemOperandEA

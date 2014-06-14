@@ -152,7 +152,6 @@ QpuTargetLowering(QpuTargetMachine &TM)
 
   // Qpu Custom Operations
   setOperationAction(ISD::GlobalAddress,      MVT::i32,   Custom);
-  setOperationAction(ISD::SELECT,             MVT::i32,   Custom);
   setOperationAction(ISD::BRCOND,             MVT::Other, Custom);
   setOperationAction(ISD::VASTART,            MVT::Other, Custom);
 
@@ -165,8 +164,10 @@ QpuTargetLowering(QpuTargetMachine &TM)
   //setOperationAction(ISD::UREM, MVT::i32, Expand);
 
   // Operations not directly supported by Qpu.
+//  setOperationAction(ISD::SELECT,             MVT::i32,   Expand);
+//  setOperationAction(ISD::SELECT_CC,          MVT::i32,   Expand);
   setOperationAction(ISD::BR_CC,             MVT::i32, Expand);
-  setOperationAction(ISD::SELECT_CC,         MVT::Other, Expand);
+//  setOperationAction(ISD::SELECT_CC,         MVT::Other, Expand);
   setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i32,  Expand);
   setOperationAction(ISD::ROTL,              MVT::i32,   Expand);
 
